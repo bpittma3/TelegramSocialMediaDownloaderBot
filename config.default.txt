@@ -1,0 +1,7 @@
+[config]
+# telegram bot token created via @BotFather
+token = <your-tg-bot-token>
+# telegram user id for every user that is allowed to use the bot
+allowed_users = [420, 2137, 621]
+# your tg username, used in the msg to unauthorized users
+owner_username = @example
