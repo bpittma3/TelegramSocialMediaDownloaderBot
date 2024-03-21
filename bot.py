@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import ninegag_handler
 import configparser
 import json
 import os
@@ -35,7 +36,8 @@ def handle_9gag(message):
     ninegagLinks = list(filter(r.match, msgContent))
     for link in ninegagLinks:
         link = link.split("?")
-        bot.reply_to(message, link)
+        ninegag_handler.handle_url(link[0])
+        bot.reply_to(message, link[0])
 
 
 @bot.message_handler(regexp="http", func=lambda message: message.from_user.id in ALLOWED_USERS)
