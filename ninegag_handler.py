@@ -1,4 +1,5 @@
 import json
+from time import localtime
 import requests
 from random_user_agent.user_agent import UserAgent
 from random_user_agent.params import SoftwareName, OperatingSystem
@@ -24,21 +25,49 @@ def handle_url(link):
             temp2 = temp1.replace("window._config = JSON.parse(\"", "")
             script_json_text = temp2.replace("\");", "")
             script_json_content = json.loads(script_json_text)
-            check_media_type(script_json_content['data']['post'])
+            return check_media_type(script_json_content['data']['post'])
+    return {}
 
 
 def check_media_type(post_json_data):
     match post_json_data['type']:
         case "Photo":
-            handle_picture(post_json_data)
+            return handle_picture(post_json_data)
+        case "Animated":
+            return handle_video(post_json_data)
+        case _:
+            print(localtime())
+            print(post_json_data['type'])
+            json_formatted_str = json.dumps(post_json_data, indent=2)
+            with open(localtime(), "w") as f:
+                f.write(json_formatted_str)
+            return {}
 
 
 def handle_picture(post_json_data):
     return_data = {}
+    return_data['type'] = "pic"
     return_data['url'] = post_json_data['url']
     return_data['title'] = post_json_data['title']
-    return_data['media'] = post_json_data['images']['image700']['url']
-    print(return_data)
+    if ("image700" in post_json_data['images']):
+        return_data['media'] = post_json_data['images']['image700']['url']
+    elif ("image460" in post_json_data['images']):
+        return_data['media'] = post_json_data['images']['image460']['url']
+    return return_data
 
 
-handle_url("https://9gag.com/gag/a9yjpq0")
+def handle_video(post_json_data):
+    return_data = {}
+    return_data['type'] = "vid"
+    return_data['url'] = post_json_data['url']
+    return_data['title'] = post_json_data['title']
+    if ("image700sv" in post_json_data['images']):
+        return_data['media'] = post_json_data['images']['image700sv']['url']
+        if (post_json_data['images']['image700sv']['hasAudio'] == 0):
+            return_data['type'] = "gif"
+    elif ("image460sv" in post_json_data['images']):
+        return_data['media'] = post_json_data['images']['image460sv']['url']
+        return_data['hasAudio'] = post_json_data['images']['image460sv']['hasAudio']
+        if (post_json_data['images']['image460sv']['hasAudio'] == 0):
+            return_data['type'] = "gif"
+    return return_data

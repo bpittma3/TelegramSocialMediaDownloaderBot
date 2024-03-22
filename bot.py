@@ -5,6 +5,7 @@ import json
 import os
 import re
 import telebot
+from telebot.types import ReplyParameters
 
 config = configparser.ConfigParser()
 if os.path.isfile("config.txt"):
@@ -30,14 +31,37 @@ def send_welcome(message):
 
 @bot.message_handler(regexp="http.*9gag", func=lambda message: message.from_user.id in ALLOWED_USERS)
 def handle_9gag(message):
-    bot.reply_to(message, "It looks like a link to 9gag.")
+    # bot.reply_to(message, "It looks like a link to 9gag.")
     msgContent = message.text.split()
     r = re.compile("http.*9gag")
     ninegagLinks = list(filter(r.match, msgContent))
     for link in ninegagLinks:
         link = link.split("?")
-        ninegag_handler.handle_url(link[0])
-        bot.reply_to(message, link[0])
+        maybe_tg_media = ninegag_handler.handle_url(link[0])
+        if (maybe_tg_media['media']):
+            caption = maybe_tg_media['title'] + \
+                "\n" + maybe_tg_media['url']
+            match (maybe_tg_media['type']):
+                case "pic":
+                    bot.send_photo(chat_id=message.chat.id,
+                                   photo=maybe_tg_media['media'],
+                                   caption=caption,
+                                   reply_parameters=ReplyParameters(message_id=message.message_id, allow_sending_without_reply=True))
+                case "gif":
+                    bot.send_animation(chat_id=message.chat.id,
+                                       animation=maybe_tg_media['media'],
+                                       caption=caption,
+                                       reply_parameters=ReplyParameters(message_id=message.message_id, allow_sending_without_reply=True))
+                case "vid":
+                    bot.reply_to(message, link[0])
+                    # bot.send_video(message.chat.id,
+                    #                maybe_tg_media['media'], caption, reply_parameters=(message_id=message.message_id, allow_sending_without_reply=True))
+                case _:
+                    bot.reply_to(
+                        message, "Can't download this 9gag post. Try again later.")
+        else:
+            bot.reply_to(
+                message, "Can't download this 9gag post. Try again later.")
 
 
 @bot.message_handler(regexp="http", func=lambda message: message.from_user.id in ALLOWED_USERS)
