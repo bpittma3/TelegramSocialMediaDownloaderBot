@@ -15,6 +15,7 @@ else:
     exit(1)
 
 ALLOWED_USERS = json.loads(config['config']['allowed_users'])
+ALLOWED_CHATS = json.loads(config['config']['allowed_chats'])
 
 bot = telebot.TeleBot(config['config']['token'])
 
@@ -29,7 +30,7 @@ def send_welcome(message):
             message, "Hi, only approved users can use me. Contact " + config['config']['owner_username'] + " if you think you should get the access :)")
 
 
-@bot.message_handler(regexp="http.*9gag", func=lambda message: message.from_user.id in ALLOWED_USERS)
+@bot.message_handler(regexp="http.*9gag", func=lambda message: message.from_user.id in ALLOWED_USERS or message.chat.id in ALLOWED_CHATS)
 def handle_9gag(message):
     # bot.reply_to(message, "It looks like a link to 9gag.")
     msgContent = message.text.split()
@@ -73,9 +74,10 @@ def handle_9gag(message):
                 message, "Can't download this 9gag post. Try again later.")
 
 
-@bot.message_handler(regexp="http", func=lambda message: message.from_user.id in ALLOWED_USERS)
+@bot.message_handler(regexp="http", func=lambda message: message.from_user.id in ALLOWED_USERS or message.chat.id in ALLOWED_CHATS)
 def handle_link(message):
-    bot.reply_to(message, "This site is not supported yet.")
+    if message.chat.id not in ALLOWED_CHATS:
+        bot.reply_to(message, "This site is not supported yet.")
 
 
 def delete_handled_message(message):
