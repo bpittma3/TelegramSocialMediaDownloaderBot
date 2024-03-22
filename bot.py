@@ -5,7 +5,7 @@ import json
 import os
 import re
 import telebot
-from telebot.types import ReplyParameters
+from telebot.types import ReplyParameters, InputFile
 
 config = configparser.ConfigParser()
 if os.path.isfile("config.txt"):
@@ -38,7 +38,7 @@ def handle_9gag(message):
     for link in ninegagLinks:
         link = link.split("?")
         maybe_tg_media = ninegag_handler.handle_url(link[0])
-        if (maybe_tg_media['media']):
+        if "media" in maybe_tg_media:
             caption = maybe_tg_media['title'] + \
                 "\n" + maybe_tg_media['url']
             match (maybe_tg_media['type']):
@@ -53,9 +53,15 @@ def handle_9gag(message):
                                        caption=caption,
                                        reply_parameters=ReplyParameters(message_id=message.message_id, allow_sending_without_reply=True))
                 case "vid":
-                    bot.reply_to(message, link[0])
-                    # bot.send_video(message.chat.id,
-                    #                maybe_tg_media['media'], caption, reply_parameters=(message_id=message.message_id, allow_sending_without_reply=True))
+                    if "filename" in maybe_tg_media:
+                        bot.send_video(chat_id=message.chat.id,
+                                       video=InputFile(
+                                           maybe_tg_media['filename']),
+                                       caption=caption,
+                                       reply_parameters=ReplyParameters(message_id=message.message_id, allow_sending_without_reply=True))
+                    else:
+                        bot.reply_to(
+                            message, "Can't download this 9gag post. Try again later.")
                 case _:
                     bot.reply_to(
                         message, "Can't download this 9gag post. Try again later.")
