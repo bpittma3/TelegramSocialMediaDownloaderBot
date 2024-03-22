@@ -47,11 +47,13 @@ def handle_9gag(message):
                                    photo=maybe_tg_media['media'],
                                    caption=caption,
                                    reply_parameters=ReplyParameters(message_id=message.message_id, allow_sending_without_reply=True))
+                    delete_handled_message(message)
                 case "gif":
                     bot.send_animation(chat_id=message.chat.id,
                                        animation=maybe_tg_media['media'],
                                        caption=caption,
                                        reply_parameters=ReplyParameters(message_id=message.message_id, allow_sending_without_reply=True))
+                    delete_handled_message(message)
                 case "vid":
                     if "filename" in maybe_tg_media:
                         bot.send_video(chat_id=message.chat.id,
@@ -59,6 +61,7 @@ def handle_9gag(message):
                                            maybe_tg_media['filename']),
                                        caption=caption,
                                        reply_parameters=ReplyParameters(message_id=message.message_id, allow_sending_without_reply=True))
+                        delete_handled_message(message)
                     else:
                         bot.reply_to(
                             message, "Can't download this 9gag post. Try again later.")
@@ -73,6 +76,15 @@ def handle_9gag(message):
 @bot.message_handler(regexp="http", func=lambda message: message.from_user.id in ALLOWED_USERS)
 def handle_link(message):
     bot.reply_to(message, "This site is not supported yet.")
+
+
+def delete_handled_message(message):
+    try:
+        bot.delete_message(message.chat.id, message.id)
+    except Exception as X:
+        print(X)
+        print("Cant remove message in chat " +
+              message.chat.title + " (" + str(message.chat.id) + ").")
 
 
 bot.polling()

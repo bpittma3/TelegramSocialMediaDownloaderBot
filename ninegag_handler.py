@@ -19,23 +19,27 @@ user_agent_rotator = UserAgent(
 def handle_url(link):
     user_agent = user_agent_rotator.get_random_user_agent()
     headers = {'User-Agent': user_agent}
-    response = requests.get(link, headers=headers)
-    soup = BeautifulSoup(response.content.decode(), 'html.parser')
-    for script in soup.find_all('script', attrs={"type": "text/javascript"}):
-        if "window._config = JSON.parse" in script.get_text():
-            script_json_text = script.get_text()
-            # TODO: clean it up, the following 3 lines are the only way I found to remove single backslashes, while keeping double ones as a single one
-            script_json_text = script_json_text.replace(
-                "\\\\", "420<impossible-to-happean-naturally-string>2137")
-            script_json_text = script_json_text.replace("\\", "")
-            script_json_text = script_json_text.replace(
-                "420<impossible-to-happean-naturally-string>2137", "\\")
-            # remove beginning and the end of the json to extract only json content
-            script_json_text = script_json_text.replace(
-                "window._config = JSON.parse(\"", "")
-            script_json_text = script_json_text.replace("\");", "")
-            script_json_content = json.loads(script_json_text)
-            return check_media_type(script_json_content['data']['post'])
+    try:
+        response = requests.get(link, headers=headers)
+        soup = BeautifulSoup(response.content.decode(), 'html.parser')
+        for script in soup.find_all('script', attrs={"type": "text/javascript"}):
+            if "window._config = JSON.parse" in script.get_text():
+                script_json_text = script.get_text()
+                # TODO: clean it up, the following 3 lines are the only way I found to remove single backslashes, while keeping double ones as a single one
+                script_json_text = script_json_text.replace(
+                    "\\\\", "420<impossible-to-happean-naturally-string>2137")
+                script_json_text = script_json_text.replace("\\", "")
+                script_json_text = script_json_text.replace(
+                    "420<impossible-to-happean-naturally-string>2137", "\\")
+                # remove beginning and the end of the json to extract only json content
+                script_json_text = script_json_text.replace(
+                    "window._config = JSON.parse(\"", "")
+                script_json_text = script_json_text.replace("\");", "")
+                script_json_content = json.loads(script_json_text)
+                return check_media_type(script_json_content['data']['post'])
+    except Exception as X:
+        print(X)
+        pass
     return {}
 
 
@@ -95,6 +99,7 @@ def download_video(return_data):
             if not os.path.isfile(filename):
                 urlretrieve(return_data['media'], filename)
             return_data['filename'] = filename
-        except:
+        except Exception as X:
+            print(X)
             pass
     return return_data
