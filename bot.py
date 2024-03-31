@@ -88,5 +88,8 @@ def delete_handled_message(message):
         print("Cant remove message in chat " +
               message.chat.title + " (" + str(message.chat.id) + ").")
 
-
-bot.polling()
+while (True):
+    try:
+        bot.polling()
+    except Exception as X:
+        print(X)
