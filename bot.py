@@ -6,6 +6,9 @@ import os
 import re
 import telebot
 from telebot.types import ReplyParameters, InputFile
+from tendo import singleton
+
+me = singleton.SingleInstance()  # will sys.exit(-1) if other instance is running
 
 config = configparser.ConfigParser()
 if os.path.isfile("config.txt"):
@@ -87,6 +90,7 @@ def delete_handled_message(message):
         print(X)
         print("Cant remove message in chat " +
               message.chat.title + " (" + str(message.chat.id) + ").")
+
 
 while (True):
     try:
