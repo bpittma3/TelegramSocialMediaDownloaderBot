@@ -105,7 +105,8 @@ def download_video(return_data):
                         os.rename(temp_filename, filename)
                         return_data['filename'] = filename
                     else:
-                        final_filename = filename + str(time.time())
+                        final_filename = "temp/9gag/" + \
+                            return_data['id'] + str(time.time()) + ".mp4"
                         os.rename(temp_filename, final_filename)
                         return_data['filename'] = final_filename
             else:
