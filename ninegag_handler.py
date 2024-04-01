@@ -1,6 +1,7 @@
 import json
 import os
 from time import localtime
+import time
 import requests
 from urllib.request import urlretrieve
 from random_user_agent.user_agent import UserAgent
@@ -94,11 +95,21 @@ def handle_video(post_json_data):
 def download_video(return_data):
     if "media" in return_data:
         filename = "temp/9gag/" + return_data['id'] + ".mp4"
+        temp_filename = filename + ".temp." + str(time.time())
         try:
             Path("temp/9gag/").mkdir(parents=True, exist_ok=True)
-            if not os.path.isfile(filename):
-                urlretrieve(return_data['media'], filename)
-            return_data['filename'] = filename
+            if (not os.path.isfile(filename)):
+                if (not os.path.isfile(temp_filename)):
+                    urlretrieve(return_data['media'], temp_filename)
+                    if not os.path.isfile(filename):
+                        os.rename(temp_filename, filename)
+                        return_data['filename'] = filename
+                    else:
+                        final_filename = filename + str(time.time())
+                        os.rename(temp_filename, final_filename)
+                        return_data['filename'] = final_filename
+            else:
+                return_data['filename'] = filename
         except Exception as X:
             print(X)
             pass
