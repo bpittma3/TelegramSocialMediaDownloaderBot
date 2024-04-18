@@ -1,6 +1,5 @@
 import json
 import os
-from time import localtime
 import time
 import requests
 from urllib.request import urlretrieve
@@ -51,10 +50,10 @@ def check_media_type(post_json_data):
         case "Animated":
             return handle_video(post_json_data)
         case _:
-            print(localtime())
+            print(str(time.time()))
             print(post_json_data['type'])
             json_formatted_str = json.dumps(post_json_data, indent=2)
-            with open(localtime(), "w") as f:
+            with open(str(time.time()), "w") as f:
                 f.write(json_formatted_str)
             return {}
 
