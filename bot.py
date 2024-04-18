@@ -151,7 +151,7 @@ def delete_handled_message(message):
     except Exception as X:
         print(X)
         print("Cant remove message in chat " +
-              message.chat.title + " (" + str(message.chat.id) + ").")
+              str(message.chat.title) + " (" + str(message.chat.id) + ").")
 
 
 while (True):
