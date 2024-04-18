@@ -9,7 +9,8 @@ import requests
 def handle_url(link):
     headers = {'User-Agent': "Telegram Social Media Downloader Bot"}
     link_parts = link.split('/')
-    id = link_parts[-1]
+    status_id = link_parts.index('status')
+    id = link_parts[status_id + 1]
     try:
         response = requests.get(
             "https://api.fxtwitter.com/tgSocialMediaDownloaderBot/status/" + id, headers=headers)
