@@ -25,9 +25,12 @@ def handle_url(link):
 
 def handle_tweet(tweet):
     return_data = {}
+
+    return_data = get_reply_quote_status(return_data, tweet)
+
     if "media" in tweet:
         if "videos" in tweet["media"]:
-            return_data = handle_video_tweet(tweet)
+            return_data = handle_video_tweet(return_data, tweet)
         elif "mosaic" in tweet["media"]:
             return_data['type'] = "pic"
             return_data['media'] = tweet["media"]["mosaic"]["formats"]["jpeg"]
@@ -37,15 +40,33 @@ def handle_tweet(tweet):
         return_data['spoiler'] = tweet['possibly_sensitive']
     else:
         return_data['type'] = "text"
+
     return_data['text'] = tweet["text"]
     return_data['author'] = tweet["author"]["name"] + \
         " (@\\" + tweet["author"]["screen_name"] + ")"
     return_data['url'] = tweet['url']
+
     return return_data
 
 
-def handle_video_tweet(tweet):
-    return_data = {}
+def get_reply_quote_status(return_data, tweet):
+    if "quote" in tweet:
+        return_data["quote"] = True
+        return_data["quote_url"] = tweet["quote"]["url"]
+    else:
+        return_data["quote"] = False
+
+    if tweet["replying_to"] != None:
+        return_data["reply"] = True
+        return_data["reply_url"] = "https://twitter.com/" + \
+            tweet["replying_to"] + "/status/" + tweet["replying_to_status"]
+    else:
+        return_data["reply"] = False
+
+    return return_data
+
+
+def handle_video_tweet(return_data, tweet):
     return_data['type'] = "vid"
     return_data['filenames'] = []
     i = 0

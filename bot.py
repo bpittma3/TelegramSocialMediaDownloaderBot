@@ -6,7 +6,7 @@ import json
 import os
 import re
 import telebot
-from telebot.types import ReplyParameters, InputFile
+from telebot.types import ReplyParameters, InputFile, LinkPreviewOptions
 from tendo import singleton
 
 me = singleton.SingleInstance()  # will sys.exit(-1) if other instance is running
@@ -88,31 +88,55 @@ def handle_twitter(message):
         link = link.split("?")
         maybe_twitter_media = twitter_handler.handle_url(link[0])
         if "type" in maybe_twitter_media:
-            caption = maybe_twitter_media['text'] + \
-                "\n\nby: " + maybe_twitter_media['author'] + \
-                "\n" + maybe_twitter_media['url']
-            match (maybe_twitter_media['type']):
-                case "vid":
-                    for filename in maybe_twitter_media['filenames']:
-                        bot.send_video(chat_id=message.chat.id,
-                                       video=InputFile(filename),
-                                       caption=caption,
-                                       has_spoiler=maybe_twitter_media['spoiler'],
-                                       reply_parameters=ReplyParameters(message_id=message.message_id, allow_sending_without_reply=True))
-                    delete_handled_message(message)
-                case "pic":
-                    bot.send_photo(chat_id=message.chat.id,
-                                   photo=maybe_twitter_media['media'],
-                                   caption=caption,
-                                   has_spoiler=maybe_twitter_media['spoiler'],
-                                   reply_parameters=ReplyParameters(message_id=message.message_id, allow_sending_without_reply=True))
-                    delete_handled_message(message)
-                case "text":
-                    bot.reply_to(message, caption)
-                    delete_handled_message(message)
-                case _:
-                    bot.reply_to(
-                        message, "Can't download this tweet. Try again later.")
+            sent_twitter_reply(message, maybe_twitter_media)
+
+
+def sent_twitter_reply(message, maybe_twitter_media):
+    if maybe_twitter_media["quote"]:
+        maybe_quote_twitter_media = twitter_handler.handle_url(
+            maybe_twitter_media["quote_url"])
+        tg_reply_message = sent_twitter_reply(
+            message, maybe_quote_twitter_media)
+    elif maybe_twitter_media["reply"]:
+        maybe_reply_twitter_media = twitter_handler.handle_url(
+            maybe_twitter_media["reply_url"])
+        tg_reply_message = sent_twitter_reply(
+            message, maybe_reply_twitter_media)
+    else:
+        tg_reply_message = message
+    caption = maybe_twitter_media['text'] + \
+        "\n\nby: " + maybe_twitter_media['author'] + \
+        "\n" + maybe_twitter_media['url']
+    match (maybe_twitter_media['type']):
+        case "vid":
+            for filename in maybe_twitter_media['filenames']:
+                return_message = bot.send_video(chat_id=message.chat.id,
+                                                video=InputFile(filename),
+                                                caption=caption,
+                                                has_spoiler=maybe_twitter_media['spoiler'],
+                                                reply_parameters=ReplyParameters(
+                                                    message_id=tg_reply_message.message_id, allow_sending_without_reply=True))
+            delete_handled_message(message)
+        case "pic":
+            return_message = bot.send_photo(chat_id=message.chat.id,
+                                            photo=maybe_twitter_media['media'],
+                                            caption=caption,
+                                            has_spoiler=maybe_twitter_media['spoiler'],
+                                            reply_parameters=ReplyParameters(
+                                                message_id=tg_reply_message.message_id, allow_sending_without_reply=True))
+            delete_handled_message(message)
+        case "text":
+            return_message = bot.send_message(chat_id=message.chat.id,
+                                              text=caption,
+                                              reply_parameters=ReplyParameters(
+                                                  message_id=tg_reply_message.message_id, allow_sending_without_reply=True),
+                                              link_preview_options=LinkPreviewOptions(is_disabled=True))
+            delete_handled_message(message)
+        case _:
+            return_message = bot.reply_to(
+                message, "Can't download this tweet. Try again later.")
+
+    return return_message
 
 
 @bot.message_handler(regexp="http", func=lambda message: message.from_user.id in ALLOWED_USERS or message.chat.id in ALLOWED_CHATS)
