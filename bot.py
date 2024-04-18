@@ -51,25 +51,23 @@ def handle_9gag(message):
                     bot.send_photo(chat_id=message.chat.id,
                                    photo=maybe_tg_media['media'],
                                    caption=caption,
-                                   reply_parameters=ReplyParameters(message_id=message.message_id, allow_sending_without_reply=True))
+                                   reply_parameters=ReplyParameters(
+                                       message_id=message.message_id, allow_sending_without_reply=True))
                     delete_handled_message(message)
                 case "gif":
                     bot.send_animation(chat_id=message.chat.id,
                                        animation=maybe_tg_media['media'],
                                        caption=caption,
-                                       reply_parameters=ReplyParameters(message_id=message.message_id, allow_sending_without_reply=True))
+                                       reply_parameters=ReplyParameters(
+                                           message_id=message.message_id, allow_sending_without_reply=True))
                     delete_handled_message(message)
                 case "vid":
-                    if "filename" in maybe_tg_media:
-                        bot.send_video(chat_id=message.chat.id,
-                                       video=InputFile(
-                                           maybe_tg_media['filename']),
-                                       caption=caption,
-                                       reply_parameters=ReplyParameters(message_id=message.message_id, allow_sending_without_reply=True))
-                        delete_handled_message(message)
-                    else:
-                        bot.reply_to(
-                            message, "Can't download this 9gag post. Try again later.")
+                    bot.send_video(chat_id=message.chat.id,
+                                   video=maybe_tg_media['media'],
+                                   caption=caption,
+                                   reply_parameters=ReplyParameters(
+                                       message_id=message.message_id, allow_sending_without_reply=True))
+                    delete_handled_message(message)
                 case _:
                     bot.reply_to(
                         message, "Can't download this 9gag post. Try again later.")
