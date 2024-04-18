@@ -1,4 +1,8 @@
 import json
+import os
+from pathlib import Path
+import time
+from urllib.request import urlretrieve
 import requests
 
 
@@ -22,7 +26,9 @@ def handle_url(link):
 def handle_tweet(tweet):
     return_data = {}
     if "media" in tweet:
-        if "mosaic" in tweet["media"]:
+        if "videos" in tweet["media"]:
+            return_data = handle_video_tweet(tweet)
+        elif "mosaic" in tweet["media"]:
             return_data['type'] = "pic"
             return_data['media'] = tweet["media"]["mosaic"]["formats"]["jpeg"]
         elif "photos" in tweet["media"]:
@@ -36,3 +42,40 @@ def handle_tweet(tweet):
         " (@\\" + tweet["author"]["screen_name"] + ")"
     return_data['url'] = tweet['url']
     return return_data
+
+
+def handle_video_tweet(tweet):
+    return_data = {}
+    return_data['type'] = "vid"
+    return_data['filenames'] = []
+    i = 0
+    for video in tweet["media"]["videos"]:
+        filename = download_video(video["url"], tweet["id"] + "_" + str(i))
+        if filename != "":
+            return_data['filenames'].append(filename)
+        i += 1
+    return return_data
+
+
+def download_video(url, id):
+    filename = "temp/twitter/" + id + ".mp4"
+    temp_filename = filename + ".temp." + str(time.time())
+    try:
+        Path("temp/twitter/").mkdir(parents=True, exist_ok=True)
+        if (not os.path.isfile(filename)):
+            if (not os.path.isfile(temp_filename)):
+                urlretrieve(url, temp_filename)
+                if not os.path.isfile(filename):
+                    os.rename(temp_filename, filename)
+                    return filename
+                else:
+                    final_filename = "temp/9gag/" + \
+                        id + str(time.time()) + ".mp4"
+                    os.rename(temp_filename, final_filename)
+                    return final_filename
+        else:
+            return filename
+    except Exception as e:
+        # Handle the exception here
+        print("An error occurred:", str(e))
+        return ""

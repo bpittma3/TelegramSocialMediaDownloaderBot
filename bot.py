@@ -89,9 +89,17 @@ def handle_twitter(message):
         maybe_twitter_media = twitter_handler.handle_url(link[0])
         if "type" in maybe_twitter_media:
             caption = maybe_twitter_media['text'] + \
-                "\nby: " + maybe_twitter_media['author'] + \
+                "\n\nby: " + maybe_twitter_media['author'] + \
                 "\n" + maybe_twitter_media['url']
             match (maybe_twitter_media['type']):
+                case "vid":
+                    for filename in maybe_twitter_media['filenames']:
+                        bot.send_video(chat_id=message.chat.id,
+                                       video=InputFile(filename),
+                                       caption=caption,
+                                       has_spoiler=maybe_twitter_media['spoiler'],
+                                       reply_parameters=ReplyParameters(message_id=message.message_id, allow_sending_without_reply=True))
+                    delete_handled_message(message)
                 case "pic":
                     bot.send_photo(chat_id=message.chat.id,
                                    photo=maybe_twitter_media['media'],
