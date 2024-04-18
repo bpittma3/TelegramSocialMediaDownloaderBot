@@ -23,6 +23,8 @@ ALLOWED_CHATS = json.loads(config['config']['allowed_chats'])
 
 bot = telebot.TeleBot(config['config']['token'])
 
+BOT_ID = bot.get_me().id
+
 
 @bot.message_handler(commands=['start', 'help'])
 def send_welcome(message):
@@ -36,6 +38,8 @@ def send_welcome(message):
 
 @bot.message_handler(regexp="http.*9gag", func=lambda message: message.from_user.id in ALLOWED_USERS or message.chat.id in ALLOWED_CHATS)
 def handle_9gag(message):
+    if message.forward_origin and message.forward_origin.sender_user.id == BOT_ID:
+        return
     # bot.reply_to(message, "It looks like a link to 9gag.")
     msgContent = message.text.split()
     r = re.compile("http.*9gag")
@@ -79,6 +83,8 @@ def handle_9gag(message):
 @bot.message_handler(regexp="https://x.com", func=lambda message: message.from_user.id in ALLOWED_USERS or message.chat.id in ALLOWED_CHATS)
 @bot.message_handler(regexp="http.*twitter", func=lambda message: message.from_user.id in ALLOWED_USERS or message.chat.id in ALLOWED_CHATS)
 def handle_twitter(message):
+    if message.forward_origin and message.forward_origin.sender_user.id == BOT_ID:
+        return
     msgContent = message.text.split()
     r = re.compile("(https://x.com|http.*twitter)")
     twitterLinks = list(filter(r.match, msgContent))
