@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import ninegag_handler
+import twitter_handler
 import configparser
 import json
 import os
@@ -75,6 +76,35 @@ def handle_9gag(message):
         else:
             bot.reply_to(
                 message, "Can't download this 9gag post. Try again later.")
+
+
+@bot.message_handler(regexp="https://x.com", func=lambda message: message.from_user.id in ALLOWED_USERS or message.chat.id in ALLOWED_CHATS)
+@bot.message_handler(regexp="http.*twitter", func=lambda message: message.from_user.id in ALLOWED_USERS or message.chat.id in ALLOWED_CHATS)
+def handle_twitter(message):
+    msgContent = message.text.split()
+    r = re.compile("(https://x.com|http.*twitter)")
+    twitterLinks = list(filter(r.match, msgContent))
+    for link in twitterLinks:
+        link = link.split("?")
+        maybe_twitter_media = twitter_handler.handle_url(link[0])
+        if "type" in maybe_twitter_media:
+            caption = maybe_twitter_media['text'] + \
+                "\nby: " + maybe_twitter_media['author'] + \
+                "\n" + maybe_twitter_media['url']
+            match (maybe_twitter_media['type']):
+                case "pic":
+                    bot.send_photo(chat_id=message.chat.id,
+                                   photo=maybe_twitter_media['media'],
+                                   caption=caption,
+                                   has_spoiler=maybe_twitter_media['spoiler'],
+                                   reply_parameters=ReplyParameters(message_id=message.message_id, allow_sending_without_reply=True))
+                    delete_handled_message(message)
+                case "text":
+                    bot.reply_to(message, caption)
+                    delete_handled_message(message)
+                case _:
+                    bot.reply_to(
+                        message, "Can't download this tweet. Try again later.")
 
 
 @bot.message_handler(regexp="http", func=lambda message: message.from_user.id in ALLOWED_USERS or message.chat.id in ALLOWED_CHATS)
