@@ -27,15 +27,26 @@ BOT_ID = bot.get_me().id
 PARSE_MODE = "MarkdownV2"
 bot.parse_mode = PARSE_MODE
 
+ERROR_MESSAGE = "Can't download this post. Try again later."
+ERROR_MESSAGE = escape_markdown(ERROR_MESSAGE)
+
 
 @bot.message_handler(commands=['start', 'help'])
 def send_welcome(message):
     if message.from_user.id in ALLOWED_USERS:
-        bot.reply_to(message, "Hi, I can download media from different social media and send them to you here on telegram. Send me a link and I'll take care of the rest.")
+        welcome_message_text = "Hi, I can download media from different social media and send" + \
+            " them to you here on telegram. Send me a link and I'll take care of the rest."
+        welcome_message_text = escape_markdown(welcome_message_text)
+        bot.reply_to(message=message, text=welcome_message_text)
     else:
         print(message.from_user)
-        bot.reply_to(
-            message, "Hi, only approved users can use me. Contact " + config['config']['owner_username'] + " if you think you should get the access :)")
+        unwelcome_message_text = "Hi, only approved users can use me. Contact " + \
+            config['config']['owner_username'] + \
+            " if you think you should get the access :)"
+        unwelcome_message_text = escape_markdown(unwelcome_message_text)
+        bot.reply_to(message=message,
+                     text=unwelcome_message_text,
+                     parse_mode=None)
 
 
 @bot.message_handler(regexp="http.*9gag", func=lambda message: message.from_user.id in ALLOWED_USERS or message.chat.id in ALLOWED_CHATS)
@@ -76,11 +87,9 @@ def handle_9gag(message):
                                        message_id=message.message_id, allow_sending_without_reply=True))
                     delete_handled_message(message)
                 case _:
-                    bot.reply_to(
-                        message, "Can't download this 9gag post. Try again later.")
+                    bot.reply_to(message, ERROR_MESSAGE)
         else:
-            bot.reply_to(
-                message, "Can't download this 9gag post. Try again later.")
+            bot.reply_to(message, ERROR_MESSAGE)
 
 
 @bot.message_handler(regexp="https://x.com", func=lambda message: message.from_user.id in ALLOWED_USERS or message.chat.id in ALLOWED_CHATS)
@@ -111,7 +120,7 @@ def sent_twitter_reply(message, maybe_twitter_media):
             tg_reply_message = sent_twitter_reply(
                 message, maybe_quote_twitter_media)
         else:
-            caption += "\n\n**Note:** This message is a quote tweet."
+            caption += "\n\n**Note:** This message is a quote tweet\."
             tg_reply_message = message
     elif maybe_twitter_media["reply"]:
         if message.chat.id not in ALLOWED_CHATS:
@@ -120,7 +129,7 @@ def sent_twitter_reply(message, maybe_twitter_media):
             tg_reply_message = sent_twitter_reply(
                 message, maybe_reply_twitter_media)
         else:
-            caption += "\n\n**Note:** This message is a reply to another tweet."
+            caption += "\n\n**Note:** This message is a reply to another tweet\."
             tg_reply_message = message
     else:
         tg_reply_message = message
@@ -190,8 +199,7 @@ def sent_twitter_reply(message, maybe_twitter_media):
                                               link_preview_options=LinkPreviewOptions(is_disabled=True))
             delete_handled_message(message)
         case _:
-            return_message = bot.reply_to(
-                message, "Can't download this tweet. Try again later.")
+            return_message = bot.reply_to(message, ERROR_MESSAGE)
 
     return return_message
 
@@ -199,7 +207,7 @@ def sent_twitter_reply(message, maybe_twitter_media):
 @bot.message_handler(regexp="http", func=lambda message: message.from_user.id in ALLOWED_USERS or message.chat.id in ALLOWED_CHATS)
 def handle_link(message):
     if message.chat.id not in ALLOWED_CHATS:
-        bot.reply_to(message, "This site is not supported yet.")
+        bot.reply_to(message, "This site is not supported yet\.")
 
 
 @bot.message_handler(regexp="test", func=lambda message: message.from_user.id in ALLOWED_USERS)
@@ -214,7 +222,7 @@ def delete_handled_message(message):
         # Handle the exception here
         print("An error occurred:", str(e))
         print("Cant remove message in chat " +
-              str(message.chat.title) + " (" + str(message.chat.id) + ").")
+              str(message.chat.title) + " (" + str(message.chat.id) + ")\.")
 
 
 while (True):
