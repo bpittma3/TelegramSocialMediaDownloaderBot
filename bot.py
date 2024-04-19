@@ -208,8 +208,9 @@ def test(message):
 def delete_handled_message(message):
     try:
         bot.delete_message(message.chat.id, message.id)
-    except Exception as X:
-        print(X)
+    except Exception as e:
+        # Handle the exception here
+        print("An error occurred:", str(e))
         print("Cant remove message in chat " +
               str(message.chat.title) + " (" + str(message.chat.id) + ").")
 
@@ -217,5 +218,6 @@ def delete_handled_message(message):
 while (True):
     try:
         bot.polling()
-    except Exception as X:
-        print(X)
+    except Exception as e:
+        # Handle the exception here
+        print("An error occurred:", str(e))
