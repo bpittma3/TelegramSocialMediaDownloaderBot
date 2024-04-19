@@ -180,6 +180,8 @@ def sent_twitter_reply(message, maybe_twitter_media):
 
                     # send_media_group returns an array of msgs, we need just the first one
                     return_message = return_message_arr[0]
+
+            delete_handled_message(message)
         case "text":
             return_message = bot.send_message(chat_id=message.chat.id,
                                               text=caption,
