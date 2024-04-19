@@ -6,7 +6,7 @@ import json
 import os
 import re
 import telebot
-from telebot.types import ReplyParameters, InputFile, LinkPreviewOptions
+from telebot.types import ReplyParameters, InputMediaPhoto, InputMediaVideo, LinkPreviewOptions
 from tendo import singleton
 
 me = singleton.SingleInstance()  # will sys.exit(-1) if other instance is running
@@ -122,23 +122,58 @@ def sent_twitter_reply(message, maybe_twitter_media):
         tg_reply_message = message
 
     match (maybe_twitter_media['type']):
-        case "vid":
-            for media in maybe_twitter_media['media']:
-                return_message = bot.send_video(chat_id=message.chat.id,
-                                                video=media,
-                                                caption=caption,
-                                                has_spoiler=maybe_twitter_media['spoiler'],
-                                                reply_parameters=ReplyParameters(
-                                                    message_id=tg_reply_message.message_id, allow_sending_without_reply=True))
-            delete_handled_message(message)
-        case "pic":
-            return_message = bot.send_photo(chat_id=message.chat.id,
-                                            photo=maybe_twitter_media['media'],
-                                            caption=caption,
-                                            has_spoiler=maybe_twitter_media['spoiler'],
-                                            reply_parameters=ReplyParameters(
-                                                message_id=tg_reply_message.message_id, allow_sending_without_reply=True))
-            delete_handled_message(message)
+        case "media":
+            if len(maybe_twitter_media['media']) == 1:
+                media = maybe_twitter_media['media'][0]
+                if media[1] == "photo":
+                    return_message = bot.send_photo(chat_id=message.chat.id,
+                                                    photo=media[0],
+                                                    caption=caption,
+                                                    has_spoiler=maybe_twitter_media['spoiler'],
+                                                    reply_parameters=ReplyParameters(
+                                                        message_id=tg_reply_message.message_id, allow_sending_without_reply=True))
+                elif media[1] == "video":
+                    return_message = bot.send_video(chat_id=message.chat.id,
+                                                    video=media[0],
+                                                    caption=caption,
+                                                    has_spoiler=maybe_twitter_media['spoiler'],
+                                                    reply_parameters=ReplyParameters(
+                                                        message_id=tg_reply_message.message_id, allow_sending_without_reply=True))
+                elif media[1] == "gif":
+                    return_message = bot.send_animation(chat_id=message.chat.id,
+                                                        animation=media[0],
+                                                        caption=caption,
+                                                        has_spoiler=maybe_twitter_media['spoiler'],
+                                                        reply_parameters=ReplyParameters(
+                                                            message_id=tg_reply_message.message_id, allow_sending_without_reply=True))
+            else:
+                media_group = []
+                i = 0
+                for media in maybe_twitter_media['media']:
+                    if media[1] == "photo":
+                        media_group.append(InputMediaPhoto(
+                            media=media[0], has_spoiler=maybe_twitter_media['spoiler']))
+                    elif media[1] == "video":
+                        media_group.append(InputMediaVideo(
+                            media=media[0], has_spoiler=maybe_twitter_media['spoiler']))
+                    elif media[1] == "gif":
+                        filename = twitter_handler.download_video(
+                            media[0], maybe_twitter_media['id'] + "_" + str(i))
+                        i += 1
+                        media_group.append(InputMediaVideo(
+                            media=open(filename, "rb"), has_spoiler=maybe_twitter_media['spoiler']))
+                    else:
+                        continue
+
+                if len(media_group) > 1:
+                    media_group[0].caption = caption
+                    return_message_arr = bot.send_media_group(chat_id=message.chat.id,
+                                                              media=media_group,
+                                                              reply_parameters=ReplyParameters(
+                                                                  message_id=tg_reply_message.message_id, allow_sending_without_reply=True))
+
+                    # send_media_group returns an array of msgs, we need just the first one
+                    return_message = return_message_arr[0]
         case "text":
             return_message = bot.send_message(chat_id=message.chat.id,
                                               text=caption,
@@ -157,6 +192,11 @@ def sent_twitter_reply(message, maybe_twitter_media):
 def handle_link(message):
     if message.chat.id not in ALLOWED_CHATS:
         bot.reply_to(message, "This site is not supported yet.")
+
+
+@bot.message_handler(regexp="test", func=lambda message: message.from_user.id in ALLOWED_USERS)
+def test(message):
+    pass
 
 
 def delete_handled_message(message):

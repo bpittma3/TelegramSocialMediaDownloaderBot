@@ -26,18 +26,15 @@ def handle_url(link):
 
 def handle_tweet(tweet):
     return_data = {}
+    return_data['id'] = tweet["id"]
 
     return_data = get_reply_quote_status(return_data, tweet)
 
     if "media" in tweet:
-        if "videos" in tweet["media"]:
-            return_data = handle_video_tweet(return_data, tweet)
-        elif "mosaic" in tweet["media"]:
-            return_data['type'] = "pic"
-            return_data['media'] = tweet["media"]["mosaic"]["formats"]["jpeg"]
-        elif "photos" in tweet["media"]:
-            return_data['type'] = "pic"
-            return_data['media'] = tweet["media"]["photos"][0]["url"]
+        return_data['type'] = "media"
+        return_data['media'] = []
+        for media in tweet["media"]["all"]:
+            return_data['media'].append([media["url"], media["type"]])
         return_data['spoiler'] = tweet['possibly_sensitive']
     else:
         return_data['type'] = "text"
@@ -64,14 +61,6 @@ def get_reply_quote_status(return_data, tweet):
     else:
         return_data["reply"] = False
 
-    return return_data
-
-
-def handle_video_tweet(return_data, tweet):
-    return_data['type'] = "vid"
-    return_data['media'] = []
-    for video in tweet["media"]["videos"]:
-        return_data['media'].append(video["url"])
     return return_data
 
 
