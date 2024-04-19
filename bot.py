@@ -7,6 +7,7 @@ import os
 import re
 import telebot
 from telebot.types import ReplyParameters, InputMediaPhoto, InputMediaVideo, LinkPreviewOptions
+from telebot.formatting import escape_markdown
 from tendo import singleton
 
 me = singleton.SingleInstance()  # will sys.exit(-1) if other instance is running
@@ -22,8 +23,9 @@ ALLOWED_USERS = json.loads(config['config']['allowed_users'])
 ALLOWED_CHATS = json.loads(config['config']['allowed_chats'])
 
 bot = telebot.TeleBot(config['config']['token'])
-
 BOT_ID = bot.get_me().id
+PARSE_MODE = "MarkdownV2"
+bot.parse_mode = PARSE_MODE
 
 
 @bot.message_handler(commands=['start', 'help'])
@@ -50,6 +52,7 @@ def handle_9gag(message):
         if "media" in maybe_tg_media:
             caption = maybe_tg_media['title'] + \
                 "\n" + maybe_tg_media['url']
+            caption = escape_markdown(caption)
             match (maybe_tg_media['type']):
                 case "pic":
                     bot.send_photo(chat_id=message.chat.id,
@@ -99,6 +102,7 @@ def sent_twitter_reply(message, maybe_twitter_media):
     caption = maybe_twitter_media['text'] + \
         "\n\nby: " + maybe_twitter_media['author'] + \
         "\n" + maybe_twitter_media['url']
+    caption = escape_markdown(caption)
 
     if maybe_twitter_media["quote"]:
         if message.chat.id not in ALLOWED_CHATS:
@@ -107,7 +111,7 @@ def sent_twitter_reply(message, maybe_twitter_media):
             tg_reply_message = sent_twitter_reply(
                 message, maybe_quote_twitter_media)
         else:
-            caption += "\n\nNote: This message is a quote tweet."
+            caption += "\n\n**Note:** This message is a quote tweet."
             tg_reply_message = message
     elif maybe_twitter_media["reply"]:
         if message.chat.id not in ALLOWED_CHATS:
@@ -116,7 +120,7 @@ def sent_twitter_reply(message, maybe_twitter_media):
             tg_reply_message = sent_twitter_reply(
                 message, maybe_reply_twitter_media)
         else:
-            caption += "\n\n<Note: This message is a reply to another tweet."
+            caption += "\n\n**Note:** This message is a reply to another tweet."
             tg_reply_message = message
     else:
         tg_reply_message = message
@@ -167,6 +171,8 @@ def sent_twitter_reply(message, maybe_twitter_media):
 
                 if len(media_group) > 1:
                     media_group[0].caption = caption
+                    # workaround for a bug in telebot
+                    media_group[0].parse_mode = PARSE_MODE
                     return_message_arr = bot.send_media_group(chat_id=message.chat.id,
                                                               media=media_group,
                                                               reply_parameters=ReplyParameters(
