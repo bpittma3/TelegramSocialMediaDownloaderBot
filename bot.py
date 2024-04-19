@@ -107,7 +107,7 @@ def sent_twitter_reply(message, maybe_twitter_media):
             tg_reply_message = sent_twitter_reply(
                 message, maybe_quote_twitter_media)
         else:
-            caption += "\n\n<b>Note:</b> This message is a quote tweet."
+            caption += "\n\nNote: This message is a quote tweet."
             tg_reply_message = message
     elif maybe_twitter_media["reply"]:
         if message.chat.id not in ALLOWED_CHATS:
@@ -116,7 +116,7 @@ def sent_twitter_reply(message, maybe_twitter_media):
             tg_reply_message = sent_twitter_reply(
                 message, maybe_reply_twitter_media)
         else:
-            caption += "\n\n<b>Note:</b> This message is a reply to another tweet."
+            caption += "\n\n<Note: This message is a reply to another tweet."
             tg_reply_message = message
     else:
         tg_reply_message = message
@@ -127,7 +127,6 @@ def sent_twitter_reply(message, maybe_twitter_media):
                 return_message = bot.send_video(chat_id=message.chat.id,
                                                 video=InputFile(filename),
                                                 caption=caption,
-                                                parse_mode='HTML',
                                                 has_spoiler=maybe_twitter_media['spoiler'],
                                                 reply_parameters=ReplyParameters(
                                                     message_id=tg_reply_message.message_id, allow_sending_without_reply=True))
@@ -136,7 +135,6 @@ def sent_twitter_reply(message, maybe_twitter_media):
             return_message = bot.send_photo(chat_id=message.chat.id,
                                             photo=maybe_twitter_media['media'],
                                             caption=caption,
-                                            parse_mode='HTML',
                                             has_spoiler=maybe_twitter_media['spoiler'],
                                             reply_parameters=ReplyParameters(
                                                 message_id=tg_reply_message.message_id, allow_sending_without_reply=True))
@@ -144,7 +142,6 @@ def sent_twitter_reply(message, maybe_twitter_media):
         case "text":
             return_message = bot.send_message(chat_id=message.chat.id,
                                               text=caption,
-                                              parse_mode='HTML',
                                               reply_parameters=ReplyParameters(
                                                   message_id=tg_reply_message.message_id, allow_sending_without_reply=True),
                                               link_preview_options=LinkPreviewOptions(is_disabled=True))
