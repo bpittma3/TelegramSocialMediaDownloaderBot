@@ -41,7 +41,7 @@ def handle_tweet(tweet):
 
     return_data['text'] = tweet["text"]
     return_data['author'] = tweet["author"]["name"] + \
-        " (@\\" + tweet["author"]["screen_name"] + ")"
+        " (@" + tweet["author"]["screen_name"] + ")"
     return_data['url'] = tweet['url']
 
     return return_data
