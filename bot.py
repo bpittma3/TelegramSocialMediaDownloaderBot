@@ -123,9 +123,9 @@ def sent_twitter_reply(message, maybe_twitter_media):
 
     match (maybe_twitter_media['type']):
         case "vid":
-            for filename in maybe_twitter_media['filenames']:
+            for media in maybe_twitter_media['media']:
                 return_message = bot.send_video(chat_id=message.chat.id,
-                                                video=InputFile(filename),
+                                                video=media,
                                                 caption=caption,
                                                 has_spoiler=maybe_twitter_media['spoiler'],
                                                 reply_parameters=ReplyParameters(

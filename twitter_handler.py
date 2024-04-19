@@ -69,13 +69,9 @@ def get_reply_quote_status(return_data, tweet):
 
 def handle_video_tweet(return_data, tweet):
     return_data['type'] = "vid"
-    return_data['filenames'] = []
-    i = 0
+    return_data['media'] = []
     for video in tweet["media"]["videos"]:
-        filename = download_video(video["url"], tweet["id"] + "_" + str(i))
-        if filename != "":
-            return_data['filenames'].append(filename)
-        i += 1
+        return_data['media'].append(video["url"])
     return return_data
 
 
