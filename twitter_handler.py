@@ -71,7 +71,7 @@ def check_if_poll(return_data, tweet):
         return_data['text'] = "This tweet is a poll! \n\n" + \
             return_data['text']
         for choice in tweet['poll']['choices']:
-            return_data['text'] += "\n" + choice['label'] + \
+            return_data['text'] += "\n * " + choice['label'] + \
                 " (" + str(choice['percentage']) + "%)"
     return return_data
 
