@@ -114,7 +114,7 @@ def sent_twitter_reply(message, maybe_twitter_media):
     caption = escape_markdown(caption)
 
     if maybe_twitter_media["poll"]:
-        caption = "**This tweet is a poll!**\n\n" + caption
+        caption = "**This tweet is a poll\!**\n\n" + caption
 
     if maybe_twitter_media["quote"]:
         if message.chat.id not in ALLOWED_CHATS:
