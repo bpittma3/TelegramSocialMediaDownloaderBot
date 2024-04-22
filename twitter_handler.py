@@ -68,11 +68,12 @@ def get_reply_quote_status(return_data, tweet):
 
 def check_if_poll(return_data, tweet):
     if "poll" in tweet:
-        return_data['text'] = "This tweet is a poll! \n\n" + \
-            return_data['text']
+        return_data['poll'] = True
         for choice in tweet['poll']['choices']:
             return_data['text'] += "\n * " + choice['label'] + \
                 " (" + str(choice['percentage']) + "%)"
+    else:
+        return_data['poll'] = False
     return return_data
 
 

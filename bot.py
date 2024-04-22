@@ -113,6 +113,9 @@ def sent_twitter_reply(message, maybe_twitter_media):
         "\n" + maybe_twitter_media['url']
     caption = escape_markdown(caption)
 
+    if maybe_twitter_media["poll"]:
+        caption = "**This tweet is a poll!**\n\n" + caption
+
     if maybe_twitter_media["quote"]:
         if message.chat.id not in ALLOWED_CHATS:
             maybe_quote_twitter_media = twitter_handler.handle_url(
