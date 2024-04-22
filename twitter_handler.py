@@ -44,6 +44,8 @@ def handle_tweet(tweet):
         " (@" + tweet["author"]["screen_name"] + ")"
     return_data['url'] = tweet['url']
 
+    return_data = check_if_poll(return_data, tweet)
+
     return return_data
 
 
@@ -61,6 +63,16 @@ def get_reply_quote_status(return_data, tweet):
     else:
         return_data["reply"] = False
 
+    return return_data
+
+
+def check_if_poll(return_data, tweet):
+    if "poll" in tweet:
+        return_data['text'] = "This tweet is a poll! \n\n" + \
+            return_data['text']
+        for choice in tweet['poll']['choices']:
+            return_data['text'] += "\n" + choice['label'] + \
+                " (" + str(choice['percentage']) + "%)"
     return return_data
 
 

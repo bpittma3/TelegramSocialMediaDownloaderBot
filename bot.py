@@ -222,7 +222,7 @@ def delete_handled_message(message):
         # Handle the exception here
         print("An error occurred:", str(e))
         print("Cant remove message in chat " +
-              str(message.chat.title) + " (" + str(message.chat.id) + ")\.")
+              str(message.chat.title) + " (" + str(message.chat.id) + ").")
 
 
 while (True):
