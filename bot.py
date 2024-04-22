@@ -114,7 +114,7 @@ def sent_twitter_reply(message, maybe_twitter_media):
     caption = escape_markdown(caption)
 
     if maybe_twitter_media["poll"]:
-        caption = "**This tweet is a poll\!**\n\n" + caption
+        caption = "*This tweet is a poll\!*\n\n" + caption
 
     if maybe_twitter_media["quote"]:
         if message.chat.id not in ALLOWED_CHATS:
@@ -123,7 +123,7 @@ def sent_twitter_reply(message, maybe_twitter_media):
             tg_reply_message = sent_twitter_reply(
                 message, maybe_quote_twitter_media)
         else:
-            caption += "\n\n**Note:** This message is a quote tweet\."
+            caption += "\n\n*Note:* This message is a quote tweet\."
             tg_reply_message = message
     elif maybe_twitter_media["reply"]:
         if message.chat.id not in ALLOWED_CHATS:
@@ -132,7 +132,7 @@ def sent_twitter_reply(message, maybe_twitter_media):
             tg_reply_message = sent_twitter_reply(
                 message, maybe_reply_twitter_media)
         else:
-            caption += "\n\n**Note:** This message is a reply to another tweet\."
+            caption += "\n\n*Note:* This message is a reply to another tweet\."
             tg_reply_message = message
     else:
         tg_reply_message = message
