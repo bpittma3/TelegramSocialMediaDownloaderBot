@@ -3,5 +3,12 @@
 token = <your-tg-bot-token>
 # telegram user id for every user that is allowed to use the bot
 allowed_users = [420, 2137, 621]
+# telegram group id for every group that is allowed to use the bot (all users)
+allowed_chats = [-10002137, -100042069]
 # your tg username, used in the msg to unauthorized users
 owner_username = @example
+
+[instagram]
+# credentials for instagrapi (ig api), it is advised to create a throw away account for this as it may get banned
+username = example
+password = example
