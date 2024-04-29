@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+import signal
+import sys
+import traceback
 import ninegag_handler
 import twitter_handler
 import configparser
@@ -229,7 +232,17 @@ def delete_handled_message(message):
               str(message.chat.title) + " (" + str(message.chat.id) + ").")
 
 
-while (True):
+def exit_gracefully(signum, frame):
+    print("Captured signal: " + str(signum))
+    traceback.print_stack(frame)
+    sys.exit(signum)
+
+
+signal.signal(signal.SIGINT, exit_gracefully)
+signal.signal(signal.SIGTERM, exit_gracefully)
+
+
+while True:
     try:
         bot.polling()
     except Exception as e:
