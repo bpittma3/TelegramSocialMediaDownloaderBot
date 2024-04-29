@@ -1,9 +1,10 @@
 import json
 import time
+
 import requests
-from random_user_agent.user_agent import UserAgent
-from random_user_agent.params import SoftwareName, OperatingSystem
 from bs4 import BeautifulSoup
+from random_user_agent.params import OperatingSystem, SoftwareName
+from random_user_agent.user_agent import UserAgent
 
 software_names = [SoftwareName.CHROME.value]
 operating_systems = [OperatingSystem.WINDOWS.value,
@@ -57,30 +58,41 @@ def check_media_type(post_json_data):
 
 def handle_picture(post_json_data):
     return_data = {}
-    return_data['type'] = "pic"
+    return_data['site'] = "9gag"
     return_data['id'] = post_json_data['id']
     return_data['url'] = post_json_data['url']
-    return_data['title'] = post_json_data['title']
+    return_data['text'] = post_json_data['title']
+    return_data['spoiler'] = False
     if "image700" in post_json_data['images']:
-        return_data['media'] = post_json_data['images']['image700']['url']
+        return_data['media'] = [
+            [post_json_data['images']['image700']['url'], "photo"]]
+        return_data['type'] = "media"
     elif "image460" in post_json_data['images']:
-        return_data['media'] = post_json_data['images']['image460']['url']
+        return_data['media'] = [
+            [post_json_data['images']['image460']['url'], "photo"]]
+        return_data['type'] = "media"
     return return_data
 
 
 def handle_video(post_json_data):
     return_data = {}
-    return_data['type'] = "vid"
+    return_data['site'] = "9gag"
     return_data['id'] = post_json_data['id']
     return_data['url'] = post_json_data['url']
-    return_data['title'] = post_json_data['title']
+    return_data['text'] = post_json_data['title']
+    return_data['spoiler'] = False
     if "image700sv" in post_json_data['images']:
-        return_data['media'] = post_json_data['images']['image700sv']['url']
+        video_type = "video"
         if post_json_data['images']['image700sv']['hasAudio'] == 0 and post_json_data['images']['image700sv']['duration'] <= 20:
-            return_data['type'] = "gif"
+            video_type = "gif"
+        return_data['media'] = [
+            [post_json_data['images']['image700sv']['url'], video_type]]
+        return_data['type'] = "media"
     elif "image460sv" in post_json_data['images']:
-        return_data['media'] = post_json_data['images']['image460sv']['url']
-        return_data['hasAudio'] = post_json_data['images']['image460sv']['hasAudio']
+        video_type = "video"
         if post_json_data['images']['image460sv']['hasAudio'] == 0 and post_json_data['images']['image460sv']['duration'] <= 20:
-            return_data['type'] = "gif"
+            video_type = "gif"
+        return_data['media'] = [
+            [post_json_data['images']['image460sv']['url'], video_type]]
+        return_data['type'] = "media"
     return return_data

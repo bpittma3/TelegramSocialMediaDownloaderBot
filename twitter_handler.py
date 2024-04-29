@@ -1,8 +1,5 @@
 import json
-import os
-from pathlib import Path
-import time
-from urllib.request import urlretrieve
+
 import requests
 
 
@@ -26,6 +23,7 @@ def handle_url(link):
 
 def handle_tweet(tweet):
     return_data = {}
+    return_data['site'] = "twitter"
     return_data['id'] = tweet["id"]
 
     return_data = get_reply_quote_status(return_data, tweet)
@@ -75,27 +73,3 @@ def check_if_poll(return_data, tweet):
     else:
         return_data['poll'] = False
     return return_data
-
-
-def download_video(url, id):
-    filename = "temp/twitter/" + id + ".mp4"
-    temp_filename = filename + ".temp." + str(time.time())
-    try:
-        Path("temp/twitter/").mkdir(parents=True, exist_ok=True)
-        if (not os.path.isfile(filename)):
-            if (not os.path.isfile(temp_filename)):
-                urlretrieve(url, temp_filename)
-                if not os.path.isfile(filename):
-                    os.rename(temp_filename, filename)
-                    return filename
-                else:
-                    final_filename = "temp/9gag/" + \
-                        id + str(time.time()) + ".mp4"
-                    os.rename(temp_filename, final_filename)
-                    return final_filename
-        else:
-            return filename
-    except Exception as e:
-        # Handle the exception here
-        print("An error occurred:", str(e))
-        return ""

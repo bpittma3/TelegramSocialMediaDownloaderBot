@@ -1,17 +1,21 @@
 #!/usr/bin/env python3
-import signal
-import sys
-import traceback
-import ninegag_handler
-import twitter_handler
 import configparser
 import json
 import os
 import re
+import signal
+import sys
+import traceback
+
 import telebot
-from telebot.types import ReplyParameters, InputMediaPhoto, InputMediaVideo, LinkPreviewOptions
 from telebot.formatting import escape_markdown
+from telebot.types import (InputMediaPhoto, InputMediaVideo,
+                           LinkPreviewOptions, ReplyParameters)
 from tendo import singleton
+
+import file_downloader
+import ninegag_handler
+import twitter_handler
 
 me = singleton.SingleInstance()  # will sys.exit(-1) if other instance is running
 
@@ -54,161 +58,179 @@ def send_welcome(message):
                      parse_mode=None)
 
 
-@bot.message_handler(regexp=SITE_REGEXES["9gag"], func=lambda message: message.from_user.id in ALLOWED_USERS or message.chat.id in ALLOWED_CHATS)
-def handle_9gag(message):
+@bot.message_handler(regexp=SITE_REGEXES['9gag'], func=lambda message: message.from_user.id in ALLOWED_USERS or message.chat.id in ALLOWED_CHATS)
+@bot.message_handler(regexp=SITE_REGEXES['twitter'], func=lambda message: message.from_user.id in ALLOWED_USERS or message.chat.id in ALLOWED_CHATS)
+def handle_supported_site(message):
     if message.forward_origin and message.forward_origin.sender_user.id == BOT_ID:
         return
-    # bot.reply_to(message, "It looks like a link to 9gag.")
     msgContent = message.text.split()
-    r = re.compile(SITE_REGEXES["9gag"])
-    ninegagLinks = list(filter(r.match, msgContent))
+
+    r1 = re.compile(SITE_REGEXES['9gag'])
+    ninegagLinks = list(filter(r1.match, msgContent))
     for link in ninegagLinks:
-        link = link.split("?")
-        maybe_tg_media = ninegag_handler.handle_url(link[0])
-        if "media" in maybe_tg_media:
-            caption = maybe_tg_media['title'] + \
-                "\n" + maybe_tg_media['url']
-            caption = escape_markdown(caption)
-            match (maybe_tg_media['type']):
-                case "pic":
-                    bot.send_photo(chat_id=message.chat.id,
-                                   photo=maybe_tg_media['media'],
-                                   caption=caption,
-                                   reply_parameters=ReplyParameters(
-                                       message_id=message.message_id, allow_sending_without_reply=True))
-                    delete_handled_message(message)
-                case "gif":
-                    bot.send_animation(chat_id=message.chat.id,
-                                       animation=maybe_tg_media['media'],
-                                       caption=caption,
-                                       reply_parameters=ReplyParameters(
-                                           message_id=message.message_id, allow_sending_without_reply=True))
-                    delete_handled_message(message)
-                case "vid":
-                    bot.send_video(chat_id=message.chat.id,
-                                   video=maybe_tg_media['media'],
-                                   caption=caption,
-                                   reply_parameters=ReplyParameters(
-                                       message_id=message.message_id, allow_sending_without_reply=True))
-                    delete_handled_message(message)
-                case _:
-                    bot.reply_to(message, ERROR_MESSAGE)
+        link = link.split("?")  # we don't need parameters after ?
+        handler_response = ninegag_handler.handle_url(link[0])
+        if "type" in handler_response:
+            send_post_to_tg(message, handler_response)
         else:
-            bot.reply_to(message, ERROR_MESSAGE)
+            print("Can't handle 9gag link: ")
+            print(*link, sep="?")
 
-
-@bot.message_handler(regexp=SITE_REGEXES["twitter"], func=lambda message: message.from_user.id in ALLOWED_USERS or message.chat.id in ALLOWED_CHATS)
-def handle_twitter(message):
-    if message.forward_origin and message.forward_origin.sender_user.id == BOT_ID:
-        return
-    msgContent = message.text.split()
-    r = re.compile(SITE_REGEXES["twitter"])
-    twitterLinks = list(filter(r.match, msgContent))
+    r2 = re.compile(SITE_REGEXES['twitter'])
+    twitterLinks = list(filter(r2.match, msgContent))
     for link in twitterLinks:
-        link = link.split("?")
-        maybe_twitter_media = twitter_handler.handle_url(link[0])
-        if "type" in maybe_twitter_media:
-            sent_twitter_reply(message, maybe_twitter_media)
+        link = link.split("?")  # we don't need parameters after ?
+        handler_response = twitter_handler.handle_url(link[0])
+        if "type" in handler_response:
+            send_post_to_tg(message, handler_response)
+        else:
+            print("Can't handle twitter link: ")
+            print(*link, sep="?")
 
 
-def sent_twitter_reply(message, maybe_twitter_media):
-    caption = maybe_twitter_media['text'] + \
-        "\n\nby: " + maybe_twitter_media['author'] + \
-        "\n" + maybe_twitter_media['url']
+def send_post_to_tg(orig_tg_msg, handler_response):
+    caption = prepare_caption(handler_response)
+    msg_to_reply_to = orig_tg_msg
+
+    if handler_response['site'] == "twitter":
+        msg_to_reply_to = handle_quote_reply_tweet(
+            orig_tg_msg, handler_response, caption)
+
+    match (handler_response['type']):
+        case "media":
+            return send_media_post(orig_tg_msg, handler_response, caption, msg_to_reply_to)
+        case "text":
+            return send_text_post(orig_tg_msg, caption, msg_to_reply_to)
+        case _:
+            return bot.reply_to(msg_to_reply_to, ERROR_MESSAGE)
+
+
+def prepare_caption(handler_response):
+    caption = ""
+    if "text" in handler_response:
+        caption += handler_response['text']
+    if "author" in handler_response:
+        caption += "\n\nby: " + handler_response['author']
+    if "url" in handler_response:
+        caption += "\n" + handler_response['url']
     caption = escape_markdown(caption)
 
-    if maybe_twitter_media["poll"]:
-        caption = "*This tweet is a poll\!*\n\n" + caption
+    if "poll" in handler_response and handler_response['poll'] == True:
+        caption = "*This post is a poll\!*\n\n" + caption
 
-    if maybe_twitter_media["quote"]:
-        if message.chat.id not in ALLOWED_CHATS:
-            maybe_quote_twitter_media = twitter_handler.handle_url(
-                maybe_twitter_media["quote_url"])
-            tg_reply_message = sent_twitter_reply(
-                message, maybe_quote_twitter_media)
+    return caption
+
+
+def handle_quote_reply_tweet(orig_tg_msg, handler_response, caption):
+    if handler_response['quote']:
+        if orig_tg_msg.chat.id not in ALLOWED_CHATS:
+            handler_response_for_quote_tweet = twitter_handler.handle_url(
+                handler_response['quote_url'])
+            return send_post_to_tg(
+                orig_tg_msg, handler_response_for_quote_tweet)
         else:
             caption += "\n\n*Note:* This message is a quote tweet\."
-            tg_reply_message = message
-    elif maybe_twitter_media["reply"]:
-        if message.chat.id not in ALLOWED_CHATS:
-            maybe_reply_twitter_media = twitter_handler.handle_url(
-                maybe_twitter_media["reply_url"])
-            tg_reply_message = sent_twitter_reply(
-                message, maybe_reply_twitter_media)
+            return orig_tg_msg
+    elif handler_response['reply']:
+        if orig_tg_msg.chat.id not in ALLOWED_CHATS:
+            handler_response_for_reply_to_tweet = twitter_handler.handle_url(
+                handler_response['reply_url'])
+            return send_post_to_tg(
+                orig_tg_msg, handler_response_for_reply_to_tweet)
         else:
             caption += "\n\n*Note:* This message is a reply to another tweet\."
-            tg_reply_message = message
+            return orig_tg_msg
     else:
-        tg_reply_message = message
+        return orig_tg_msg
 
-    match (maybe_twitter_media['type']):
-        case "media":
-            if len(maybe_twitter_media['media']) == 1:
-                media = maybe_twitter_media['media'][0]
-                if media[1] == "photo":
-                    return_message = bot.send_photo(chat_id=message.chat.id,
-                                                    photo=media[0],
-                                                    caption=caption,
-                                                    has_spoiler=maybe_twitter_media['spoiler'],
-                                                    reply_parameters=ReplyParameters(
-                                                        message_id=tg_reply_message.message_id, allow_sending_without_reply=True))
-                elif media[1] == "video":
-                    return_message = bot.send_video(chat_id=message.chat.id,
-                                                    video=media[0],
-                                                    caption=caption,
-                                                    has_spoiler=maybe_twitter_media['spoiler'],
-                                                    reply_parameters=ReplyParameters(
-                                                        message_id=tg_reply_message.message_id, allow_sending_without_reply=True))
-                elif media[1] == "gif":
-                    return_message = bot.send_animation(chat_id=message.chat.id,
-                                                        animation=media[0],
-                                                        caption=caption,
-                                                        has_spoiler=maybe_twitter_media['spoiler'],
-                                                        reply_parameters=ReplyParameters(
-                                                            message_id=tg_reply_message.message_id, allow_sending_without_reply=True))
-            else:
-                media_group = []
-                i = 0
-                for media in maybe_twitter_media['media']:
-                    if media[1] == "photo":
-                        media_group.append(InputMediaPhoto(
-                            media=media[0], has_spoiler=maybe_twitter_media['spoiler']))
-                    elif media[1] == "video":
-                        media_group.append(InputMediaVideo(
-                            media=media[0], has_spoiler=maybe_twitter_media['spoiler']))
-                    elif media[1] == "gif":
-                        filename = twitter_handler.download_video(
-                            media[0], maybe_twitter_media['id'] + "_" + str(i))
-                        i += 1
-                        media_group.append(InputMediaVideo(
-                            media=open(filename, "rb"), has_spoiler=maybe_twitter_media['spoiler']))
-                    else:
-                        continue
 
-                if len(media_group) > 1:
-                    media_group[0].caption = caption
-                    # workaround for a bug in telebot
-                    media_group[0].parse_mode = PARSE_MODE
-                    return_message_arr = bot.send_media_group(chat_id=message.chat.id,
-                                                              media=media_group,
-                                                              reply_parameters=ReplyParameters(
-                                                                  message_id=tg_reply_message.message_id, allow_sending_without_reply=True))
+def send_media_post(orig_tg_msg, handler_response, caption, msg_to_reply_to):
+    if len(handler_response['media']) == 1:
+        return send_singular_media_post(
+            orig_tg_msg, handler_response, caption, msg_to_reply_to)
+    else:
+        return send_multiple_media_post(
+            orig_tg_msg, handler_response, caption, msg_to_reply_to)
 
-                    # send_media_group returns an array of msgs, we need just the first one
-                    return_message = return_message_arr[0]
 
-            delete_handled_message(message)
-        case "text":
-            return_message = bot.send_message(chat_id=message.chat.id,
-                                              text=caption,
-                                              reply_parameters=ReplyParameters(
-                                                  message_id=tg_reply_message.message_id, allow_sending_without_reply=True),
-                                              link_preview_options=LinkPreviewOptions(is_disabled=True))
-            delete_handled_message(message)
-        case _:
-            return_message = bot.reply_to(message, ERROR_MESSAGE)
+def send_singular_media_post(orig_tg_msg, handler_response, caption, msg_to_reply_to):
+    media = handler_response['media'][0]
+    if media[1] == "photo":
+        sent_message = bot.send_photo(chat_id=orig_tg_msg.chat.id,
+                                      photo=media[0],
+                                      caption=caption,
+                                      has_spoiler=handler_response['spoiler'],
+                                      reply_parameters=ReplyParameters(
+                                          message_id=msg_to_reply_to.message_id,
+                                          allow_sending_without_reply=True))
+    elif media[1] == "video":
+        sent_message = bot.send_video(chat_id=orig_tg_msg.chat.id,
+                                      video=media[0],
+                                      caption=caption,
+                                      has_spoiler=handler_response['spoiler'],
+                                      reply_parameters=ReplyParameters(
+                                          message_id=msg_to_reply_to.message_id,
+                                          allow_sending_without_reply=True))
+    elif media[1] == "gif":
+        sent_message = bot.send_animation(chat_id=orig_tg_msg.chat.id,
+                                          animation=media[0],
+                                          caption=caption,
+                                          has_spoiler=handler_response['spoiler'],
+                                          reply_parameters=ReplyParameters(
+                                              message_id=msg_to_reply_to.message_id,
+                                              allow_sending_without_reply=True))
+    else:
+        return orig_tg_msg
 
-    return return_message
+    delete_handled_message(orig_tg_msg)
+    return sent_message
+
+
+def send_multiple_media_post(orig_tg_msg, handler_response, caption, msg_to_reply_to):
+    media_group = []
+    i = 0
+    for media in handler_response['media']:
+        if media[1] == "photo":
+            media_group.append(InputMediaPhoto(
+                media=media[0], has_spoiler=handler_response['spoiler']))
+        elif media[1] == "video":
+            media_group.append(InputMediaVideo(
+                media=media[0], has_spoiler=handler_response['spoiler']))
+        elif media[1] == "gif":
+            filename = file_downloader.download_video(
+                media[0], handler_response['site'], handler_response['id'] + "_" + str(i))
+            i += 1
+            media_group.append(InputMediaVideo(
+                media=open(filename, "rb"), has_spoiler=handler_response['spoiler']))
+        else:
+            continue
+
+    if len(media_group) > 1:
+        media_group[0].caption = caption
+        # workaround for a bug in telebot, will be fixed in a newer than 4.17.0 release
+        media_group[0].parse_mode = PARSE_MODE
+        sent_message_arr = bot.send_media_group(chat_id=orig_tg_msg.chat.id,
+                                                media=media_group,
+                                                reply_parameters=ReplyParameters(
+                                                    message_id=msg_to_reply_to.message_id,
+                                                    allow_sending_without_reply=True))
+
+        delete_handled_message(orig_tg_msg)
+        # send_media_group returns an array of msgs, we need just the first one
+        return sent_message_arr[0]
+    else:
+        return orig_tg_msg
+
+
+def send_text_post(orig_tg_msg, caption, msg_to_reply_to):
+    sent_message = bot.send_message(chat_id=orig_tg_msg.chat.id,
+                                    text=caption,
+                                    reply_parameters=ReplyParameters(
+                                        message_id=msg_to_reply_to.message_id,
+                                        allow_sending_without_reply=True),
+                                    link_preview_options=LinkPreviewOptions(is_disabled=True))
+    delete_handled_message(orig_tg_msg)
+    return sent_message
 
 
 @bot.message_handler(regexp="http", func=lambda message: message.from_user.id in ALLOWED_USERS or message.chat.id in ALLOWED_CHATS)
