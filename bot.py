@@ -180,6 +180,8 @@ def send_singular_media_post(orig_tg_msg, handler_response, caption, msg_to_repl
                                               message_id=msg_to_reply_to.message_id,
                                               allow_sending_without_reply=True))
     else:
+        print("This type of media (" + media[1] + ") is not supported.")
+        print(handler_response)
         return orig_tg_msg
 
     delete_handled_message(orig_tg_msg)
@@ -203,7 +205,8 @@ def send_multiple_media_post(orig_tg_msg, handler_response, caption, msg_to_repl
             media_group.append(InputMediaVideo(
                 media=open(filename, "rb"), has_spoiler=handler_response['spoiler']))
         else:
-            continue
+            print("This type of media (" + media[1] + ") is not supported.")
+            print(handler_response)
 
     if len(media_group) > 1:
         media_group[0].caption = caption
@@ -219,6 +222,8 @@ def send_multiple_media_post(orig_tg_msg, handler_response, caption, msg_to_repl
         # send_media_group returns an array of msgs, we need just the first one
         return sent_message_arr[0]
     else:
+        print("Multi media post contains only one supported media.")
+        print(handler_response)
         return orig_tg_msg
 
 
