@@ -108,7 +108,5 @@ def prepare_description(api_response):
     if api_response['caption_text'] is not None:
         text += api_response['caption_text']
     if api_response['accessibility_caption'] is not None:
-        if text != "":
-            text += "\n"
-        text += api_response['accessibility_caption']
+        text += "\n" + api_response['accessibility_caption']
     return text
