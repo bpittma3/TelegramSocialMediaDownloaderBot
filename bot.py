@@ -29,6 +29,11 @@ bot.parse_mode = PARSE_MODE
 
 ERROR_MESSAGE = escape_markdown("Can't download this post. Try again later.")
 
+SITE_REGEXES = {
+    "9gag": "((http.?://)|^| )(www.)?9gag.com",
+    "twitter": "((http.?://)|^| )(www.)?(x|twitter).com"
+}
+
 
 @bot.message_handler(commands=['start', 'help'])
 def send_welcome(message):
@@ -46,13 +51,13 @@ def send_welcome(message):
                      parse_mode=None)
 
 
-@bot.message_handler(regexp="http.*9gag", func=lambda message: message.from_user.id in ALLOWED_USERS or message.chat.id in ALLOWED_CHATS)
+@bot.message_handler(regexp=SITE_REGEXES["9gag"], func=lambda message: message.from_user.id in ALLOWED_USERS or message.chat.id in ALLOWED_CHATS)
 def handle_9gag(message):
     if message.forward_origin and message.forward_origin.sender_user.id == BOT_ID:
         return
     # bot.reply_to(message, "It looks like a link to 9gag.")
     msgContent = message.text.split()
-    r = re.compile("http.*9gag")
+    r = re.compile(SITE_REGEXES["9gag"])
     ninegagLinks = list(filter(r.match, msgContent))
     for link in ninegagLinks:
         link = link.split("?")
@@ -89,13 +94,12 @@ def handle_9gag(message):
             bot.reply_to(message, ERROR_MESSAGE)
 
 
-@bot.message_handler(regexp="https://x.com", func=lambda message: message.from_user.id in ALLOWED_USERS or message.chat.id in ALLOWED_CHATS)
-@bot.message_handler(regexp="http.*twitter", func=lambda message: message.from_user.id in ALLOWED_USERS or message.chat.id in ALLOWED_CHATS)
+@bot.message_handler(regexp=SITE_REGEXES["twitter"], func=lambda message: message.from_user.id in ALLOWED_USERS or message.chat.id in ALLOWED_CHATS)
 def handle_twitter(message):
     if message.forward_origin and message.forward_origin.sender_user.id == BOT_ID:
         return
     msgContent = message.text.split()
-    r = re.compile("(https://x.com|http.*twitter)")
+    r = re.compile(SITE_REGEXES["twitter"])
     twitterLinks = list(filter(r.match, msgContent))
     for link in twitterLinks:
         link = link.split("?")
