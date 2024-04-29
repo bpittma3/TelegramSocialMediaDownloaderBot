@@ -3,3 +3,5 @@ random_user_agent
 beautifulsoup4
 tendo
 instagrapi
+# for instagrapi
+pillow

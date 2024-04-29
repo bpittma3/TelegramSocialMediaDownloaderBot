@@ -8,12 +8,14 @@ import sys
 import traceback
 
 import telebot
+from instagrapi import Client
 from telebot.formatting import escape_markdown
 from telebot.types import (InputMediaPhoto, InputMediaVideo,
                            LinkPreviewOptions, ReplyParameters)
 from tendo import singleton
 
 import file_downloader
+import instagram_handler
 import ninegag_handler
 import twitter_handler
 
@@ -38,8 +40,11 @@ ERROR_MESSAGE = escape_markdown("Can't download this post. Try again later.")
 
 SITE_REGEXES = {
     "9gag": "((http.?://)|^| )(www.)?9gag.com",
-    "twitter": "((http.?://)|^| )(www.)?(x|twitter).com"
+    "twitter": "((http.?://)|^| )(www.)?(x|twitter).com",
+    "instagram": "((http.?://)|^| )(www.)?instagram.com",
 }
+
+instagram_client = Client()
 
 
 @bot.message_handler(commands=['start', 'help'])
@@ -60,6 +65,7 @@ def send_welcome(message):
 
 @bot.message_handler(regexp=SITE_REGEXES['9gag'], func=lambda message: message.from_user.id in ALLOWED_USERS or message.chat.id in ALLOWED_CHATS)
 @bot.message_handler(regexp=SITE_REGEXES['twitter'], func=lambda message: message.from_user.id in ALLOWED_USERS or message.chat.id in ALLOWED_CHATS)
+@bot.message_handler(regexp=SITE_REGEXES['instagram'], func=lambda message: message.from_user.id in ALLOWED_USERS or message.chat.id in ALLOWED_CHATS)
 def handle_supported_site(message):
     if message.forward_origin and message.forward_origin.sender_user.id == BOT_ID:
         return
@@ -85,6 +91,18 @@ def handle_supported_site(message):
             send_post_to_tg(message, handler_response)
         else:
             print("Can't handle twitter link: ")
+            print(*link, sep="?")
+
+    r3 = re.compile(SITE_REGEXES['instagram'])
+    igLinks = list(filter(r3.match, msgContent))
+    for link in igLinks:
+        link = link.split("?")  # we don't need parameters after ?
+        handler_response = instagram_handler.handle_url(
+            instagram_client, link[0])
+        if "type" in handler_response:
+            send_post_to_tg(message, handler_response)
+        else:
+            print("Can't handle instagram link: ")
             print(*link, sep="?")
 
 
