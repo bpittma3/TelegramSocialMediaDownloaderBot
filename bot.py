@@ -27,23 +27,20 @@ BOT_ID = bot.get_me().id
 PARSE_MODE = "MarkdownV2"
 bot.parse_mode = PARSE_MODE
 
-ERROR_MESSAGE = "Can't download this post. Try again later."
-ERROR_MESSAGE = escape_markdown(ERROR_MESSAGE)
+ERROR_MESSAGE = escape_markdown("Can't download this post. Try again later.")
 
 
 @bot.message_handler(commands=['start', 'help'])
 def send_welcome(message):
     if message.from_user.id in ALLOWED_USERS:
-        welcome_message_text = "Hi, I can download media from different social media and send" + \
-            " them to you here on telegram. Send me a link and I'll take care of the rest."
-        welcome_message_text = escape_markdown(welcome_message_text)
+        welcome_message_text = escape_markdown("Hi, I can download media from different social media and send" +
+                                               " them to you here on telegram. Send me a link and I'll take care of the rest.")
         bot.reply_to(message=message, text=welcome_message_text)
     else:
         print(message.from_user)
-        unwelcome_message_text = "Hi, only approved users can use me. Contact " + \
-            config['config']['owner_username'] + \
-            " if you think you should get the access :)"
-        unwelcome_message_text = escape_markdown(unwelcome_message_text)
+        unwelcome_message_text = escape_markdown("Hi, only approved users can use me. Contact " +
+                                                 config['config']['owner_username'] +
+                                                 " if you think you should get the access :)")
         bot.reply_to(message=message,
                      text=unwelcome_message_text,
                      parse_mode=None)
