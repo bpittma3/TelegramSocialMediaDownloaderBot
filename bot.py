@@ -104,6 +104,7 @@ def handle_supported_site(message):
         else:
             print("Can't handle instagram link: ")
             print(*link, sep="?")
+            print(handler_response)
 
 
 def send_post_to_tg(orig_tg_msg, handler_response):
@@ -286,7 +287,8 @@ def exit_gracefully(signum, frame):
 signal.signal(signal.SIGINT, exit_gracefully)
 signal.signal(signal.SIGTERM, exit_gracefully)
 
-
+# instagram_handler.login_ig_user(instagram_client, config['instagram'])
+instagram_handler.set_basic_settings(instagram_client)
 while True:
     try:
         bot.polling()
