@@ -69,6 +69,7 @@ def handle_url(ig_client, link):
     return_data['id'] = api_response['id']
     return_data['url'] = link
     return_data['text'] = prepare_description(api_response)
+    return_data['author'] = prepare_author(api_response)
     return_data['spoiler'] = False
     match api_response['media_type']:
         case 1:  # photo
@@ -110,3 +111,20 @@ def prepare_description(api_response):
     if api_response['accessibility_caption'] is not None:
         text += "\n" + api_response['accessibility_caption']
     return text
+
+
+def prepare_author(api_response):
+    author = ""
+    is_fullname = api_response['user']['fullname'] is not None
+    is_username = api_response['user']['username'] is not None
+
+    if is_fullname:
+        author += api_response['user']['fullname']
+    if is_fullname and is_username:
+        author += " ("
+    if is_username:
+        author += "@" + api_response['user']['username']
+    if is_fullname and is_username:
+        author += ")"
+
+    return author
