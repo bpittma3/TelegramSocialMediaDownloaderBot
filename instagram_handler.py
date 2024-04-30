@@ -6,7 +6,6 @@ def set_basic_settings(ig_client):
     ig_client.set_country('PL')
     ig_client.set_country_code(48)
     ig_client.set_timezone_offset(2 * 60 * 60)
-    print(ig_client.get_settings())
 
 
 def login_ig_user(ig_client, ig_config):

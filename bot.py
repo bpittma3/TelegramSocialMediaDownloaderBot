@@ -342,8 +342,11 @@ signal.signal(signal.SIGTERM, exit_gracefully)
 
 if config['instagram'].getboolean('do_login'):
     instagram_handler.login_ig_user(instagram_client, config['instagram'])
+    print("Started an ig client with an account with following settings:")
 else:
     instagram_handler.set_basic_settings(instagram_client)
+    print("Started an ig client without an account with following settings:")
+print(instagram_client.get_settings())
 
 while True:
     try:
