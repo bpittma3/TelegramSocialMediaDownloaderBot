@@ -24,50 +24,49 @@ def handle_url(link):
 def handle_tweet(tweet):
     return_data = {}
     return_data['site'] = "twitter"
-    return_data['id'] = tweet["id"]
+    return_data['id'] = tweet['id']
 
     return_data = get_reply_quote_status(return_data, tweet)
 
-    if "media" in tweet:
+    if "media" in tweet and tweet['media'] is not None:
         return_data['type'] = "media"
         return_data['media'] = []
-        for media in tweet["media"]["all"]:
-            return_data['media'].append([media["url"], media["type"]])
+        for media in tweet['media']['all']:
+            return_data['media'].append([media['url'], media['type']])
         return_data['spoiler'] = tweet['possibly_sensitive']
     else:
         return_data['type'] = "text"
 
-    return_data['text'] = tweet["text"]
-    return_data['author'] = tweet["author"]["name"] + \
-        " (@" + tweet["author"]["screen_name"] + ")"
+    return_data['text'] = tweet['text']
+    return_data['author'] = tweet['author']['name'] + \
+        " (@" + tweet['author']['screen_name'] + ")"
     return_data['url'] = tweet['url']
 
     return_data = check_if_poll(return_data, tweet)
-    if "community_note" in tweet:
+    if "community_note" in tweet and tweet['community_note'] is not None:
         return_data = check_community_notes(return_data, tweet)
-
     return return_data
 
 
 def get_reply_quote_status(return_data, tweet):
-    if "quote" in tweet:
-        return_data["quote"] = True
-        return_data["quote_url"] = tweet["quote"]["url"]
+    if "quote" in tweet and tweet['quote'] is not None:
+        return_data['quote'] = True
+        return_data['quote_url'] = tweet['quote']['url']
     else:
-        return_data["quote"] = False
+        return_data['quote'] = False
 
-    if tweet["replying_to"] != None:
-        return_data["reply"] = True
-        return_data["reply_url"] = "https://twitter.com/" + \
-            tweet["replying_to"] + "/status/" + tweet["replying_to_status"]
+    if "replying_to" in tweet and tweet['replying_to'] is not None:
+        return_data['reply'] = True
+        return_data['reply_url'] = "https://twitter.com/" + \
+            tweet['replying_to'] + "/status/" + tweet['replying_to_status']
     else:
-        return_data["reply"] = False
+        return_data['reply'] = False
 
     return return_data
 
 
 def check_if_poll(return_data, tweet):
-    if "poll" in tweet:
+    if "poll" in tweet and tweet['poll'] is not None:
         return_data['poll'] = True
         for choice in tweet['poll']['choices']:
             return_data['text'] += "\n * " + choice['label'] + \
