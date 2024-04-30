@@ -121,11 +121,11 @@ def prepare_description(api_response):
 
 def prepare_author(api_response):
     author = ""
-    is_fullname = api_response['user']['fullname'] is not None
+    is_fullname = api_response['user']['full_name'] is not None
     is_username = api_response['user']['username'] is not None
 
     if is_fullname:
-        author += api_response['user']['fullname']
+        author += api_response['user']['full_name']
     if is_fullname and is_username:
         author += " ("
     if is_username:
