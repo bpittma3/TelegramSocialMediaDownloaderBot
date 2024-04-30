@@ -334,12 +334,17 @@ def exit_gracefully(signum, frame):
     traceback.print_stack(frame)
     sys.exit(signum)
 
+# def main():
+
 
 signal.signal(signal.SIGINT, exit_gracefully)
 signal.signal(signal.SIGTERM, exit_gracefully)
 
-# instagram_handler.login_ig_user(instagram_client, config['instagram'])
-instagram_handler.set_basic_settings(instagram_client)
+if config['instagram'].getboolean('do_login'):
+    instagram_handler.login_ig_user(instagram_client, config['instagram'])
+else:
+    instagram_handler.set_basic_settings(instagram_client)
+
 while True:
     try:
         bot.polling()

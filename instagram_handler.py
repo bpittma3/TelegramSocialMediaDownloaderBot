@@ -10,13 +10,19 @@ def set_basic_settings(ig_client):
 
 
 def login_ig_user(ig_client, ig_config):
-    session = ig_client.load_settings("ig_session.json")
+    try:
+        session = ig_client.load_settings("ig_session.json")
+    except FileNotFoundError:
+        session = None
+    except Exception as e:
+        print("Couldn't load session file: ", str(e))
+        session = None
 
     login_via_session = False
     login_via_pw = False
     new_session_created = False
 
-    if session:
+    if session is not None:
         try:
             ig_client.set_settings(session)
             ig_client.login(username=ig_config['username'],

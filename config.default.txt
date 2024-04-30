@@ -10,5 +10,7 @@ owner_username = @example
 
 [instagram]
 # credentials for instagrapi (ig api), it is advised to create a throw away account for this as it may get banned
+# change do_login to true if you want to log in
+do_login = False
 username = example
 password = example
