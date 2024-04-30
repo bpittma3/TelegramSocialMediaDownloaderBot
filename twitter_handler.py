@@ -43,6 +43,8 @@ def handle_tweet(tweet):
     return_data['url'] = tweet['url']
 
     return_data = check_if_poll(return_data, tweet)
+    if "community_note" in tweet:
+        return_data = check_community_notes(return_data, tweet)
 
     return return_data
 
@@ -72,4 +74,16 @@ def check_if_poll(return_data, tweet):
                 " (" + str(choice['percentage']) + "%)"
     else:
         return_data['poll'] = False
+    return return_data
+
+
+def check_community_notes(return_data, tweet):
+    return_data['community_note'] = True
+    return_data['community_note_text'] = tweet['community_note']['text']
+    if "entities" in tweet['community_note']:
+        return_data['community_note_links'] = []
+        for entity in tweet['community_note']['entities']:
+            return_data['community_note_links'].append({"from": entity['fromIndex'],
+                                                        "to": entity['toIndex'],
+                                                        "url": entity['ref']['url']})
     return return_data

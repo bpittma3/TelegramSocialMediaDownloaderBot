@@ -137,7 +137,48 @@ def prepare_caption(handler_response):
     if "poll" in handler_response and handler_response['poll'] == True:
         caption = "*This post is a poll\!*\n\n" + caption
 
+    if handler_response['site'] == "twitter" and "community_note" in handler_response and handler_response['community_note'] == True:
+        caption += parse_community_notes(handler_response)
+
     return caption
+
+
+def parse_community_notes(handler_response):
+    if "community_note_links" not in handler_response:
+        return "\n\n*This tweet has community notes*:\n" + escape_markdown(handler_response['community_note_text'])
+
+    note_arr = []
+    split_indices = []
+    links = []
+    text = handler_response['community_note_text']
+
+    split_indices.append(0)
+    for link in handler_response['community_note_links']:
+        split_indices.append(link['from'])
+        split_indices.append(link['to'])
+        links.append(link['url'])
+    split_indices.append(None)
+
+    link_index = 0
+    for i in range(len(split_indices) - 1):
+        is_link = i % 2 == 1
+        if not is_link:
+            note_arr.append(
+                {"text": text[split_indices[i]:split_indices[i+1]], "is_link": is_link})
+        else:
+            note_arr.append({"text": text[split_indices[i]:split_indices[i+1]],
+                            "is_link": is_link, "link": links[link_index]})
+            link_index += 1
+
+    note = "\n\n*This tweet has community notes*:\n"
+    for note_part in note_arr:
+        if note_part["is_link"]:
+            note += "[" + escape_markdown(note_part["text"]) + \
+                "](" + note_part["link"] + ")"
+        else:
+            note += escape_markdown(note_part["text"])
+
+    return note
 
 
 def handle_quote_reply_tweet(orig_tg_msg, handler_response, caption):
@@ -145,8 +186,13 @@ def handle_quote_reply_tweet(orig_tg_msg, handler_response, caption):
         if orig_tg_msg.chat.id not in ALLOWED_CHATS:
             handler_response_for_quote_tweet = twitter_handler.handle_url(
                 handler_response['quote_url'])
-            return send_post_to_tg(
-                orig_tg_msg, handler_response_for_quote_tweet)
+            if "type" in handler_response_for_quote_tweet:
+                return send_post_to_tg(
+                    orig_tg_msg, handler_response_for_quote_tweet)
+            else:
+                print("Can't handle twitter link: " +
+                      handler_response['quote_url'])
+                return orig_tg_msg
         else:
             caption += "\n\n*Note:* This message is a quote tweet\."
             return orig_tg_msg
@@ -154,8 +200,13 @@ def handle_quote_reply_tweet(orig_tg_msg, handler_response, caption):
         if orig_tg_msg.chat.id not in ALLOWED_CHATS:
             handler_response_for_reply_to_tweet = twitter_handler.handle_url(
                 handler_response['reply_url'])
-            return send_post_to_tg(
-                orig_tg_msg, handler_response_for_reply_to_tweet)
+            if "type" in handler_response_for_reply_to_tweet:
+                return send_post_to_tg(
+                    orig_tg_msg, handler_response_for_reply_to_tweet)
+            else:
+                print("Can't handle twitter link: " +
+                      handler_response['reply_url'])
+                return orig_tg_msg
         else:
             caption += "\n\n*Note:* This message is a reply to another tweet\."
             return orig_tg_msg
