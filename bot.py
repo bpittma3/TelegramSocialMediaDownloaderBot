@@ -224,35 +224,95 @@ def send_media_post(orig_tg_msg, handler_response, caption, msg_to_reply_to):
 def send_singular_media_post(orig_tg_msg, handler_response, caption, msg_to_reply_to):
     media = handler_response['media'][0]
     if media[1] == "photo":
-        sent_message = bot.send_photo(chat_id=orig_tg_msg.chat.id,
-                                      photo=media[0],
-                                      caption=caption,
-                                      has_spoiler=handler_response['spoiler'],
-                                      reply_parameters=ReplyParameters(
-                                          message_id=msg_to_reply_to.message_id,
-                                          allow_sending_without_reply=True))
+        sent_message = send_photo_post(
+            orig_tg_msg, media[0], caption, handler_response['spoiler'], msg_to_reply_to)
     elif media[1] == "video":
-        sent_message = bot.send_video(chat_id=orig_tg_msg.chat.id,
-                                      video=media[0],
-                                      caption=caption,
-                                      has_spoiler=handler_response['spoiler'],
-                                      reply_parameters=ReplyParameters(
-                                          message_id=msg_to_reply_to.message_id,
-                                          allow_sending_without_reply=True))
+        sent_message = send_video_post(
+            orig_tg_msg, media[0], caption, handler_response['spoiler'], msg_to_reply_to)
     elif media[1] == "gif":
-        sent_message = bot.send_animation(chat_id=orig_tg_msg.chat.id,
-                                          animation=media[0],
-                                          caption=caption,
-                                          has_spoiler=handler_response['spoiler'],
-                                          reply_parameters=ReplyParameters(
-                                              message_id=msg_to_reply_to.message_id,
-                                              allow_sending_without_reply=True))
+        sent_message = send_gif_post(
+            orig_tg_msg, media[0], caption, handler_response['spoiler'], msg_to_reply_to)
     else:
         print("This type of media (" + media[1] + ") is not supported.")
         print(handler_response)
         return orig_tg_msg
 
     delete_handled_message(orig_tg_msg)
+    return sent_message
+
+
+def send_photo_post(orig_tg_msg, photo, caption, has_spoiler, msg_to_reply_to):
+    if len(caption) <= 1024:
+        sent_message = bot.send_photo(chat_id=orig_tg_msg.chat.id,
+                                      photo=photo,
+                                      caption=caption,
+                                      has_spoiler=has_spoiler,
+                                      reply_parameters=ReplyParameters(
+                                          message_id=msg_to_reply_to.message_id,
+                                          allow_sending_without_reply=True))
+    else:
+        # TODO: secure for over 4096 characters
+        sent_message = bot.send_photo(chat_id=orig_tg_msg.chat.id,
+                                      photo=photo,
+                                      has_spoiler=has_spoiler,
+                                      reply_parameters=ReplyParameters(
+                                          message_id=msg_to_reply_to.message_id,
+                                          allow_sending_without_reply=True))
+        sent_message = bot.send_message(chat_id=orig_tg_msg.chat.id,
+                                        text=caption,
+                                        reply_parameters=ReplyParameters(
+                                            message_id=sent_message.message_id),
+                                        link_preview_options=LinkPreviewOptions(is_disabled=True))
+    return sent_message
+
+
+def send_video_post(orig_tg_msg, video, caption, has_spoiler, msg_to_reply_to):
+    if len(caption) <= 1024:
+        sent_message = bot.send_video(chat_id=orig_tg_msg.chat.id,
+                                      video=video,
+                                      caption=caption,
+                                      has_spoiler=has_spoiler,
+                                      reply_parameters=ReplyParameters(
+                                          message_id=msg_to_reply_to.message_id,
+                                          allow_sending_without_reply=True))
+    else:
+        # TODO: secure for over 4096 characters
+        sent_message = bot.send_video(chat_id=orig_tg_msg.chat.id,
+                                      video=video,
+                                      has_spoiler=has_spoiler,
+                                      reply_parameters=ReplyParameters(
+                                          message_id=msg_to_reply_to.message_id,
+                                          allow_sending_without_reply=True))
+        sent_message = bot.send_message(chat_id=orig_tg_msg.chat.id,
+                                        text=caption,
+                                        reply_parameters=ReplyParameters(
+                                            message_id=sent_message.message_id),
+                                        link_preview_options=LinkPreviewOptions(is_disabled=True))
+    return sent_message
+
+
+def send_gif_post(orig_tg_msg, gif, caption, has_spoiler, msg_to_reply_to):
+    if len(caption) <= 1024:
+        sent_message = bot.send_animation(chat_id=orig_tg_msg.chat.id,
+                                          animation=gif,
+                                          caption=caption,
+                                          has_spoiler=has_spoiler,
+                                          reply_parameters=ReplyParameters(
+                                              message_id=msg_to_reply_to.message_id,
+                                              allow_sending_without_reply=True))
+    else:
+        # TODO: secure for over 4096 characters
+        sent_message = bot.send_animation(chat_id=orig_tg_msg.chat.id,
+                                          animation=gif,
+                                          has_spoiler=has_spoiler,
+                                          reply_parameters=ReplyParameters(
+                                              message_id=msg_to_reply_to.message_id,
+                                              allow_sending_without_reply=True))
+        sent_message = bot.send_message(chat_id=orig_tg_msg.chat.id,
+                                        text=caption,
+                                        reply_parameters=ReplyParameters(
+                                            message_id=sent_message.message_id),
+                                        link_preview_options=LinkPreviewOptions(is_disabled=True))
     return sent_message
 
 
@@ -277,18 +337,33 @@ def send_multiple_media_post(orig_tg_msg, handler_response, caption, msg_to_repl
             print(handler_response)
 
     if len(media_group) > 1:
-        media_group[0].caption = caption
-        # workaround for a bug in telebot, will be fixed in a newer than 4.17.0 release
-        media_group[0].parse_mode = PARSE_MODE
-        sent_message_arr = bot.send_media_group(chat_id=orig_tg_msg.chat.id,
-                                                media=media_group,
-                                                reply_parameters=ReplyParameters(
-                                                    message_id=msg_to_reply_to.message_id,
-                                                    allow_sending_without_reply=True))
+        if len(caption) <= 1024:
+            media_group[0].caption = caption
+            # workaround for a bug in telebot, will be fixed in a newer than 4.17.0 release
+            media_group[0].parse_mode = PARSE_MODE
+            sent_message_arr = bot.send_media_group(chat_id=orig_tg_msg.chat.id,
+                                                    media=media_group,
+                                                    reply_parameters=ReplyParameters(
+                                                        message_id=msg_to_reply_to.message_id,
+                                                        allow_sending_without_reply=True))
 
-        delete_handled_message(orig_tg_msg)
-        # send_media_group returns an array of msgs, we need just the first one
-        return sent_message_arr[0]
+            delete_handled_message(orig_tg_msg)
+            # send_media_group returns an array of msgs, we need just the first one
+            return sent_message_arr[0]
+        else:
+            # TODO: secure for over 4096 characters
+            sent_message_arr = bot.send_media_group(chat_id=orig_tg_msg.chat.id,
+                                                    media=media_group,
+                                                    reply_parameters=ReplyParameters(
+                                                        message_id=msg_to_reply_to.message_id,
+                                                        allow_sending_without_reply=True))
+            sent_message_with_caption = bot.send_message(chat_id=orig_tg_msg.chat.id,
+                                                         text=caption,
+                                                         reply_parameters=ReplyParameters(
+                                                             message_id=sent_message_arr[0].message_id),
+                                                         link_preview_options=LinkPreviewOptions(is_disabled=True))
+            delete_handled_message(orig_tg_msg)
+            return sent_message_with_caption
     else:
         print("Multi media post contains only one supported media.")
         print(handler_response)
