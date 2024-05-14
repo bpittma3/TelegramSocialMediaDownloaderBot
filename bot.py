@@ -67,7 +67,7 @@ def send_welcome(message):
 @bot.message_handler(regexp=SITE_REGEXES['twitter'], func=lambda message: message.from_user.id in ALLOWED_USERS or message.chat.id in ALLOWED_CHATS)
 @bot.message_handler(regexp=SITE_REGEXES['instagram'], func=lambda message: message.from_user.id in ALLOWED_USERS or message.chat.id in ALLOWED_CHATS)
 def handle_supported_site(message):
-    if message.forward_origin and message.forward_origin.sender_user.id == BOT_ID:
+    if message.forward_origin and message.forward_origin.type == "user" and message.forward_origin.sender_user.id == BOT_ID:
         return
     msgContent = message.text.split()
 
