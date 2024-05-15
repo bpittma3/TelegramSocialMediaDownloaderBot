@@ -1,5 +1,6 @@
 import os
 import time
+import traceback
 from pathlib import Path
 from urllib.request import urlretrieve
 
@@ -23,6 +24,8 @@ def download_video(url, site, id):
         else:
             return filename
     except Exception as e:
-        # Handle the exception here
-        print("An error occurred:", str(e))
+        print(time.strftime("%d.%m.%Y %H:%M:%S", time.localtime()))
+        traceback.print_exception(type(e), e, e.__traceback__)
+        print("Couldn't download video from url: " + url)
+        print()
         return ""

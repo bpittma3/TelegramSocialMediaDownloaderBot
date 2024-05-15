@@ -1,5 +1,6 @@
 import json
 import time
+import traceback
 
 import requests
 from bs4 import BeautifulSoup
@@ -34,11 +35,13 @@ def handle_url(link):
                     "window._config = JSON.parse(\"", "")
                 script_json_text = script_json_text.replace("\");", "")
                 script_json_content = json.loads(script_json_text)
-                return check_media_type(script_json_content['data']['post'])
-    except Exception as X:
-        print(X)
-        pass
-    return {}
+    except Exception as e:
+        print(time.strftime("%d.%m.%Y %H:%M:%S", time.localtime()))
+        traceback.print_exception(type(e), e, e.__traceback__)
+        print()
+        return {}
+
+    return check_media_type(script_json_content['data']['post'])
 
 
 def check_media_type(post_json_data):

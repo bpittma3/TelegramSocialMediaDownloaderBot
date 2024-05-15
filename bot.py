@@ -5,6 +5,7 @@ import os
 import re
 import signal
 import sys
+import time
 import traceback
 
 import telebot
@@ -396,14 +397,17 @@ def delete_handled_message(message):
     try:
         bot.delete_message(message.chat.id, message.id)
     except Exception as e:
-        # Handle the exception here
-        print("An error occurred:", str(e))
+        print(time.strftime("%d.%m.%Y %H:%M:%S", time.localtime()))
+        print(str(e))
         print("Cant remove message in chat " +
               str(message.chat.title) + " (" + str(message.chat.id) + ").")
+        print()
 
 
 def exit_gracefully(signum, frame):
+    print(time.strftime("%d.%m.%Y %H:%M:%S", time.localtime()))
     print("Captured signal: " + str(signum))
+    print("Traceback (most recent call last):")
     traceback.print_stack(frame)
     sys.exit(signum)
 
@@ -425,5 +429,6 @@ while True:
     try:
         bot.polling()
     except Exception as e:
-        # Handle the exception here
-        print("An error occurred:", str(e))
+        print(time.strftime("%d.%m.%Y %H:%M:%S", time.localtime()))
+        traceback.print_exception(type(e), e, e.__traceback__)
+        print()

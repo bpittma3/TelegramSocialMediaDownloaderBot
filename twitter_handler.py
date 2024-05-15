@@ -1,4 +1,5 @@
 import json
+import time
 
 import requests
 
@@ -17,8 +18,10 @@ def handle_url(link):
         else:
             return {}
     except Exception as e:
-        # Handle the exception here
-        print("An error occurred:", str(e))
+        print(time.strftime("%d.%m.%Y %H:%M:%S", time.localtime()))
+        print(str(e))
+        print("Couldn't get tweet from url: " + link)
+        print()
 
 
 def handle_tweet(tweet):
