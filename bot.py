@@ -39,9 +39,9 @@ bot.parse_mode = PARSE_MODE
 ERROR_MESSAGE = escape_markdown("Can't download this post. Try again later.")
 
 SITE_REGEXES = {
-    "9gag": "((http.?://)|^| )(www.)?9gag.com",
-    "twitter": "((http.?://)|^| )(www.)?(x|twitter).com",
-    "instagram": "((http.?://)|^| )(www.)?instagram.com",
+    "9gag": "((http(s)?://)|^| )(www.)?9gag.com",
+    "twitter": "((http(s)?://)|^| )(www.)?((fixup|fixv)?x|(fx|vx)?twitter).com",
+    "instagram": "((http(s)?://)|^| )(www.)?instagram.com",
 }
 
 instagram_client = Client()
