@@ -404,18 +404,23 @@ def delete_handled_message(message):
         print()
 
 
-def exit_gracefully(signum, frame):
+def signal_handler(signum, frame):
     print(time.strftime("%d.%m.%Y %H:%M:%S", time.localtime()))
     print("Captured signal: " + str(signum))
     print("Traceback (most recent call last):")
     traceback.print_stack(frame)
-    sys.exit(signum)
+    if signum == signal.SIGINT or signum == signal.SIGTERM:
+        sys.exit(signum)
 
 # def main():
 
 
-signal.signal(signal.SIGINT, exit_gracefully)
-signal.signal(signal.SIGTERM, exit_gracefully)
+for sig in set(signal.Signals):
+    try:
+        signal.signal(sig, signal_handler)
+        print("Handler for signal " + str(sig) + " set.")
+    except (ValueError, OSError, RuntimeError) as _:
+        pass
 
 if config['instagram'].getboolean('do_login'):
     instagram_handler.login_ig_user(instagram_client, config['instagram'])
