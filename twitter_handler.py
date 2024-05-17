@@ -19,9 +19,10 @@ def handle_url(link):
             return {}
     except Exception as e:
         print(time.strftime("%d.%m.%Y %H:%M:%S", time.localtime()))
-        print(str(e))
+        traceback.print_exception(type(e), e, e.__traceback__)
         print("Couldn't get tweet from url: " + link)
         print()
+        return {}
 
 
 def handle_tweet(tweet):
@@ -29,25 +30,33 @@ def handle_tweet(tweet):
     return_data['site'] = "twitter"
     return_data['id'] = tweet['id']
 
-    return_data = get_reply_quote_status(return_data, tweet)
-
-    if "media" in tweet and tweet['media'] is not None:
-        return_data['type'] = "media"
-        return_data['media'] = []
-        for media in tweet['media']['all']:
-            return_data['media'].append([media['url'], media['type']])
-        return_data['spoiler'] = tweet['possibly_sensitive']
-    else:
-        return_data['type'] = "text"
-
     return_data['text'] = tweet['text']
     return_data['author'] = tweet['author']['name'] + \
         " (@" + tweet['author']['screen_name'] + ")"
     return_data['url'] = tweet['url']
 
+    if "media" in tweet and tweet['media'] is not None:
+        if "all" in tweet['media'] and tweet['media']['all'] is not None:
+            return_data['type'] = "media"
+            return_data['media'] = []
+            for media in tweet['media']['all']:
+                return_data['media'].append([media['url'], media['type']])
+            return_data['spoiler'] = tweet['possibly_sensitive']
+        else:
+            return_data['type'] = "text"
+            # When media is present but media.all is not, then there has to be
+            # media.external which is an embed for external media such as yt
+            # video. The link to that video is already added to the post text
+            # by the API so I don't have to do anything with it.
+    else:
+        return_data['type'] = "text"
+
+    return_data = get_reply_quote_status(return_data, tweet)
+
     return_data = check_if_poll(return_data, tweet)
     if "community_note" in tweet and tweet['community_note'] is not None:
         return_data = check_community_notes(return_data, tweet)
+
     return return_data
 
 
