@@ -113,7 +113,7 @@ def send_post_to_tg(orig_tg_msg, handler_response):
     msg_to_reply_to = orig_tg_msg
 
     if handler_response['site'] == "twitter":
-        msg_to_reply_to, caption = handle_quote_reply_tweet(
+        msg_to_reply_to, caption = handle_reply_quote_post(
             orig_tg_msg, handler_response, caption)
 
     match (handler_response['type']):
@@ -182,35 +182,72 @@ def parse_community_notes(handler_response):
     return note
 
 
-def handle_quote_reply_tweet(orig_tg_msg, handler_response, caption):
+def handle_reply_quote_post(orig_tg_msg, handler_response, caption):
+    return_msg = orig_tg_msg
+
+    handle_reply, handle_quote = check_if_reply_quote_should_be_handled(
+        orig_tg_msg, handler_response)
+
     if handler_response['quote']:
-        if orig_tg_msg.chat.id not in ALLOWED_CHATS:
+        if handle_quote:
             handler_response_for_quote_tweet = twitter_handler.handle_url(
                 handler_response['quote_url'])
             if "type" in handler_response_for_quote_tweet:
-                return (send_post_to_tg(orig_tg_msg, handler_response_for_quote_tweet), caption)
+                return_msg = send_post_to_tg(
+                    orig_tg_msg, handler_response_for_quote_tweet)
             else:
                 print("Can't handle twitter link: " +
                       handler_response['quote_url'])
-                return orig_tg_msg, caption
+                caption = add_info_about_quote_to_caption(
+                    caption, handler_response['quote_url'])
         else:
-            caption += "\n\n*Note:* This message is a quote tweet\."
-            return orig_tg_msg, caption
-    elif handler_response['reply']:
-        if orig_tg_msg.chat.id not in ALLOWED_CHATS:
+            caption = add_info_about_quote_to_caption(
+                caption, handler_response['quote_url'])
+
+    if handler_response['reply']:
+        if handle_reply:
             handler_response_for_reply_to_tweet = twitter_handler.handle_url(
                 handler_response['reply_url'])
             if "type" in handler_response_for_reply_to_tweet:
-                return (send_post_to_tg(orig_tg_msg, handler_response_for_reply_to_tweet), caption)
+                return_msg = send_post_to_tg(
+                    orig_tg_msg, handler_response_for_reply_to_tweet)
             else:
                 print("Can't handle twitter link: " +
                       handler_response['reply_url'])
-                return orig_tg_msg, caption
+                caption = add_info_about_reply_to_caption(
+                    caption, handler_response['reply_url'])
         else:
-            caption += "\n\n*Note:* This message is a reply to another tweet\."
-            return orig_tg_msg, caption
-    else:
-        return orig_tg_msg, caption
+            caption = add_info_about_reply_to_caption(
+                caption, handler_response['reply_url'])
+
+    return return_msg, caption
+
+
+def check_if_reply_quote_should_be_handled(orig_tg_msg, handler_response):
+    if orig_tg_msg.chat.id in ALLOWED_CHATS:
+        return False, False
+
+    handle_reply, handle_quote = False, False
+
+    if handler_response['quote']:
+        handle_quote = True
+    if handler_response['reply']:
+        handle_quote = False
+        handle_reply = True
+
+    return handle_reply, handle_quote
+
+
+def add_info_about_quote_to_caption(caption, quote_url):
+    caption += "\n\n*Note:* This message is a quote tweet of: " + \
+        escape_markdown(quote_url)
+    return caption
+
+
+def add_info_about_reply_to_caption(caption, reply_url):
+    caption += "\n\n*Note:* This message is a reply to: " + \
+        escape_markdown(reply_url)
+    return caption
 
 
 def send_media_post(orig_tg_msg, handler_response, caption, msg_to_reply_to):
@@ -409,6 +446,7 @@ def signal_handler(signum, frame):
     print("Captured signal: " + str(signum))
     print("Traceback (most recent call last):")
     traceback.print_stack(frame)
+    print()
     if signum == signal.SIGINT or signum == signal.SIGTERM:
         sys.exit(signum)
 
