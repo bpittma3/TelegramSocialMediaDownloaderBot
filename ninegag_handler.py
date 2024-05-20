@@ -35,13 +35,17 @@ def handle_url(link):
                     "window._config = JSON.parse(\"", "")
                 script_json_text = script_json_text.replace("\");", "")
                 script_json_content = json.loads(script_json_text)
+                return check_media_type(script_json_content['data']['post'])
     except Exception as e:
         print(time.strftime("%d.%m.%Y %H:%M:%S", time.localtime()))
         traceback.print_exception(type(e), e, e.__traceback__)
         print()
         return {}
 
-    return check_media_type(script_json_content['data']['post'])
+    # if no exception and incomplete data returned by 9gag
+    print(time.strftime("%d.%m.%Y %H:%M:%S", time.localtime()))
+    print("9gag returned incomplete json data.")
+    return {}
 
 
 def check_media_type(post_json_data):
