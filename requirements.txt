@@ -1,5 +1,5 @@
 pyTelegramBotAPI
-random_user_agent
+getuseragent
 beautifulsoup4
 tendo
 instagrapi
