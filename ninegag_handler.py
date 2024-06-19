@@ -4,15 +4,21 @@ import traceback
 
 import requests
 from bs4 import BeautifulSoup
-from random_user_agent.params import OperatingSystem, SoftwareName
+from random_user_agent.params import (HardwareType, OperatingSystem,
+                                      Popularity, SoftwareName)
 from random_user_agent.user_agent import UserAgent
 
-software_names = [SoftwareName.CHROME.value]
-operating_systems = [OperatingSystem.WINDOWS.value,
-                     OperatingSystem.LINUX.value]
+hardware_names = [HardwareType.MOBILE.value]
+software_names = [SoftwareName.CHROME.value, SoftwareName.FIREFOX.value]
+operating_systems = [OperatingSystem.ANDROID.value,
+                     OperatingSystem.IOS.value]
 
 user_agent_rotator = UserAgent(
-    software_names=software_names, operating_systems=operating_systems, limit=100)
+    hardware_names=hardware_names,
+    software_names=software_names,
+    operating_systems=operating_systems,
+    popularity=[Popularity.POPULAR.value],
+    limit=100)
 
 
 def handle_url(link):
