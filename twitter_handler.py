@@ -68,9 +68,12 @@ def get_reply_quote_status(return_data, tweet):
         return_data['quote'] = False
 
     if "replying_to" in tweet and tweet['replying_to'] is not None:
-        return_data['reply'] = True
-        return_data['reply_url'] = "https://twitter.com/" + \
-            tweet['replying_to'] + "/status/" + tweet['replying_to_status']
+        if "replying_to_status" in tweet and tweet['replying_to_status'] is not None:
+            return_data['reply'] = True
+            return_data['reply_url'] = "https://twitter.com/" + \
+                tweet['replying_to'] + "/status/" + tweet['replying_to_status']
+        else:
+            return_data['reply'] = False
     else:
         return_data['reply'] = False
 
