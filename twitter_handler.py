@@ -42,7 +42,10 @@ def handle_tweet(tweet):
             return_data['media'] = []
             for media in tweet['media']['all']:
                 return_data['media'].append([media['url'], media['type']])
-            return_data['spoiler'] = tweet['possibly_sensitive']
+            if "possibly_sensitive" in tweet and tweet['possibly_sensitive'] is not None:
+                return_data['spoiler'] = tweet['possibly_sensitive']
+            else:
+                return_data['spoiler'] = False
         else:
             return_data['type'] = "text"
             # When media is present but media.all is not, then there has to be
