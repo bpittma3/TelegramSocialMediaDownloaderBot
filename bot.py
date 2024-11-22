@@ -15,6 +15,7 @@ from telebot.types import (InputMediaPhoto, InputMediaVideo,
                            LinkPreviewOptions, ReplyParameters)
 from tendo import singleton
 
+import booru_handler
 import file_downloader
 import instagram_handler
 import ninegag_handler
@@ -43,6 +44,7 @@ SITE_REGEXES = {
     "9gag": "((http(s)?://)|^| )(www.)?9gag.com",
     "twitter": "((http(s)?://)|^| )(www.)?((fixup|fixv)?x|(fx|vx)?twitter).com",
     "instagram": "((http(s)?://)|^| )(www.)?instagram.com",
+    "booru": "((http(s)?://)|^| )(www.)?[a-zA-Z]*booru.org",
 }
 
 instagram_client = Client()
@@ -67,6 +69,7 @@ def send_welcome(message):
 @bot.message_handler(regexp=SITE_REGEXES['9gag'], func=lambda message: message.from_user.id in ALLOWED_USERS or message.chat.id in ALLOWED_CHATS)
 @bot.message_handler(regexp=SITE_REGEXES['twitter'], func=lambda message: message.from_user.id in ALLOWED_USERS or message.chat.id in ALLOWED_CHATS)
 @bot.message_handler(regexp=SITE_REGEXES['instagram'], func=lambda message: message.from_user.id in ALLOWED_USERS or message.chat.id in ALLOWED_CHATS)
+@bot.message_handler(regexp=SITE_REGEXES['booru'], func=lambda message: message.from_user.id in ALLOWED_USERS or message.chat.id in ALLOWED_CHATS)
 def handle_supported_site(message):
     if message.forward_origin and message.forward_origin.type == "user" and message.forward_origin.sender_user.id == BOT_ID:
         return
@@ -106,6 +109,17 @@ def handle_supported_site(message):
             print("Can't handle instagram link: ")
             print(*link, sep="?")
             print(handler_response)
+
+    r2 = re.compile(SITE_REGEXES['booru'])
+    booruLinks = list(filter(r2.match, msgContent))
+    for link in booruLinks:
+        link = link.split("?")  # we don't need parameters after ?
+        handler_response = booru_handler.handle_url(link[0])
+        if "type" in handler_response:
+            send_post_to_tg(message, handler_response)
+        else:
+            print("Can't handle *booru link: ")
+            print(*link, sep="?")
 
 
 def send_post_to_tg(orig_tg_msg, handler_response):

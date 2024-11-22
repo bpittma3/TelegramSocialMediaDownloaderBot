@@ -1,0 +1,95 @@
+import json
+import time
+import traceback
+
+import requests
+
+
+def handle_url(link):
+    headers = {'User-Agent': "Telegram Social Media Downloader Bot"}
+
+    link_parts = link.split('/')
+
+    # look for full site name, returns list of indexes
+    site_idx = [i for i, item in enumerate(
+        link_parts) if item.endswith('booru.org')]
+    # the first index should point to the site name
+    site_id = site_idx[0] if site_idx else None
+    if not site_id:
+        print("Couldn't get image from url (can't find the domain): " + link)
+        print()
+        return {}
+    domain = link_parts[site_id]
+
+    try:
+        images_id = link_parts.index('images')
+    except ValueError:
+        print("Couldn't get image from url (no images part): " + link)
+        print()
+        return {}
+    post_number = link_parts[images_id + 1]
+
+    try:
+        response = requests.get(
+            "https://" + domain + "/api/v1/json/images/" + post_number, headers=headers)
+        if response.status_code == 200:
+            result = json.loads(response.text)
+            return handle_image(result['image'], domain)
+        else:
+            print("Couldn't get image from url (code=" +
+                  response.status_code + "): " + link)
+            print()
+            return {}
+    except Exception as e:
+        print(time.strftime("%d.%m.%Y %H:%M:%S", time.localtime()))
+        traceback.print_exception(type(e), e, e.__traceback__)
+        print("Couldn't get image from url: " + link)
+        print()
+        return {}
+
+
+def handle_image(booru_image, domain):
+    return_data = {}
+    return_data['site'] = "booru"
+    return_data['id'] = booru_image['id']
+
+    author = check_if_author_known(booru_image['tags'])
+    if author:
+        return_data['author'] = author
+
+    return_data['text'] = booru_image['description']
+    return_data['url'] = "https://" + domain + \
+        "/images/" + str(booru_image['id'])
+
+    return_data['type'] = "media"
+
+    match booru_image['format']:
+        case "jpg" | "jpeg" | "png" | "svg":
+            # to be changed when booru api handles svg better
+            # (currently only low quality png is returned)
+            return_data['media'] = [
+                [booru_image['representations']['full'], "photo"]]
+        case "gif":
+            return_data['media'] = [
+                [booru_image['representations']['full'], "gif"]]
+        case "webm":
+            return_data['media'] = [
+                [booru_image['representations']['full'], "video"]]
+        case _:
+            return_data['type'] = "text"
+            return_data['text'] = "Unknown image format: " + \
+                booru_image['format'] + "\n" + return_data['text']
+
+    return_data['spoiler'] = booru_image['spoilered']
+
+    return return_data
+
+
+def check_if_author_known(tags):
+    list_of_authors = []
+    for tag in tags:
+        if tag.startswith("artist:"):
+            list_of_authors.append(tag[7:])
+    if not list_of_authors:
+        return None
+    return ', '.join(list_of_authors)
