@@ -4,6 +4,9 @@ import traceback
 
 import requests
 
+import file_converter
+import file_downloader
+
 
 def handle_url(link):
     headers = {'User-Agent': "Telegram Social Media Downloader Bot"}
@@ -73,8 +76,7 @@ def handle_image(booru_image, domain):
             return_data['media'] = [
                 [booru_image['representations']['full'], "gif"]]
         case "webm":
-            return_data['media'] = [
-                [booru_image['representations']['full'], "video"]]
+            return_data = handle_video(booru_image, return_data)
         case _:
             return_data['type'] = "text"
             return_data['text'] = "Unknown image format: " + \
@@ -93,3 +95,20 @@ def check_if_author_known(tags):
     if not list_of_authors:
         return None
     return ', '.join(list_of_authors)
+
+
+def handle_video(booru_image, return_data):
+    webm_filename = file_downloader.download_video(url=booru_image['representations']['full'],
+                                                   site="booru",
+                                                   id=str(booru_image['id']))
+
+    converted_filename = file_converter.convert_webm_to_mp4(webm_filename)
+
+    if converted_filename:
+        return_data['media'] = [[converted_filename, "video_file"]]
+    else:
+        print("Couldn't convert webm to mp4: " + webm_filename)
+        return_data['media'] = [
+            [booru_image['representations']['full'], "video"]]
+
+    return return_data

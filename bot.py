@@ -292,6 +292,10 @@ def send_singular_media_post(orig_tg_msg, handler_response, caption, msg_to_repl
     elif media[1] == "video":
         sent_message = send_video_post(
             orig_tg_msg, media[0], caption, handler_response['spoiler'], msg_to_reply_to)
+    elif media[1] == "video_file":
+        video_file = open(media[0], "rb")
+        sent_message = send_video_post(
+            orig_tg_msg, video_file, caption, handler_response['spoiler'], msg_to_reply_to)
     elif media[1] == "gif":
         sent_message = send_gif_post(
             orig_tg_msg, media[0], caption, handler_response['spoiler'], msg_to_reply_to)
@@ -392,6 +396,9 @@ def send_multiple_media_post(orig_tg_msg, handler_response, caption, msg_to_repl
         elif media[1] == "video":
             media_group.append(InputMediaVideo(
                 media=media[0], has_spoiler=handler_response['spoiler']))
+        elif media[1] == "video_file":
+            media_group.append(InputMediaVideo(
+                media=open(media[0], "rb"), has_spoiler=handler_response['spoiler']))
         elif media[1] == "gif":
             filename = file_downloader.download_video(
                 media[0], handler_response['site'], handler_response['id'] + "_" + str(i))
