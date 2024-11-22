@@ -2,11 +2,14 @@ import os
 import time
 import traceback
 from pathlib import Path
+from urllib.parse import urlparse
 from urllib.request import urlretrieve
 
 
 def download_video(url, site, id):
-    filename = "temp/" + site + "/" + id + ".mp4"
+    path = urlparse(url).path
+    ext = os.path.splitext(path)[1] or ".mp4"
+    filename = "temp/" + site + "/" + id + ext
     temp_filename = filename + ".temp." + str(time.time())
     try:
         Path("temp/" + site + "/").mkdir(parents=True, exist_ok=True)
@@ -18,7 +21,7 @@ def download_video(url, site, id):
                     return filename
                 else:
                     final_filename = "temp/" + site + "/" + \
-                        id + str(time.time()) + ".mp4"
+                        id + str(time.time()) + ext
                     os.rename(temp_filename, final_filename)
                     return final_filename
         else:
