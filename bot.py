@@ -21,6 +21,13 @@ import instagram_handler
 import ninegag_handler
 import twitter_handler
 
+
+class Caption:
+    def __init__(self, short, long):
+        self.short = short
+        self.long = long
+
+
 me = singleton.SingleInstance()  # will sys.exit(-1) if other instance is running
 
 config = configparser.ConfigParser()
@@ -127,8 +134,8 @@ def send_post_to_tg(orig_tg_msg, handler_response):
     msg_to_reply_to = orig_tg_msg
 
     if handler_response['site'] == "twitter":
-        msg_to_reply_to, caption = handle_reply_quote_post(
-            orig_tg_msg, handler_response, caption)
+        msg_to_reply_to, caption.long = handle_reply_quote_post(
+            orig_tg_msg, handler_response, caption.long)
 
     match (handler_response['type']):
         case "media":
@@ -140,22 +147,26 @@ def send_post_to_tg(orig_tg_msg, handler_response):
 
 
 def prepare_caption(handler_response):
-    caption = ""
+    long_caption = ""
+    short_caption = ""
     if "text" in handler_response:
-        caption += handler_response['text']
+        long_caption += handler_response['text']
     if "author" in handler_response:
-        caption += "\n\nby: " + handler_response['author']
+        long_caption += "\n\nby: " + handler_response['author']
+        short_caption += "by: " + handler_response['author']
     if "url" in handler_response:
-        caption += "\n" + handler_response['url']
-    caption = escape_markdown(caption)
+        long_caption += "\n" + handler_response['url']
+        short_caption += "\n" + handler_response['url']
+    long_caption = escape_markdown(long_caption)
+    short_caption = escape_markdown(short_caption)
 
     if "poll" in handler_response and handler_response['poll'] == True:
-        caption = "*This post is a poll\!*\n\n" + caption
+        long_caption = "*This post is a poll\!*\n\n" + long_caption
 
     if handler_response['site'] == "twitter" and "community_note" in handler_response and handler_response['community_note'] == True:
-        caption += parse_community_notes(handler_response)
+        long_caption += parse_community_notes(handler_response)
 
-    return caption
+    return Caption(short_caption, long_caption)
 
 
 def parse_community_notes(handler_response):
@@ -294,10 +305,10 @@ def send_singular_media_post(orig_tg_msg, handler_response, caption, msg_to_repl
 
 
 def send_photo_post(orig_tg_msg, photo, caption, has_spoiler, msg_to_reply_to):
-    if len(caption) <= 1024:
+    if len(caption.long) <= 1024:
         sent_message = bot.send_photo(chat_id=orig_tg_msg.chat.id,
                                       photo=photo,
-                                      caption=caption,
+                                      caption=caption.long,
                                       has_spoiler=has_spoiler,
                                       reply_parameters=ReplyParameters(
                                           message_id=msg_to_reply_to.message_id,
@@ -306,12 +317,13 @@ def send_photo_post(orig_tg_msg, photo, caption, has_spoiler, msg_to_reply_to):
         # TODO: secure for over 4096 characters
         sent_message = bot.send_photo(chat_id=orig_tg_msg.chat.id,
                                       photo=photo,
+                                      caption=caption.short,
                                       has_spoiler=has_spoiler,
                                       reply_parameters=ReplyParameters(
                                           message_id=msg_to_reply_to.message_id,
                                           allow_sending_without_reply=True))
         sent_message = bot.send_message(chat_id=orig_tg_msg.chat.id,
-                                        text=caption,
+                                        text=caption.long,
                                         reply_parameters=ReplyParameters(
                                             message_id=sent_message.message_id),
                                         link_preview_options=LinkPreviewOptions(is_disabled=True))
@@ -319,10 +331,10 @@ def send_photo_post(orig_tg_msg, photo, caption, has_spoiler, msg_to_reply_to):
 
 
 def send_video_post(orig_tg_msg, video, caption, has_spoiler, msg_to_reply_to):
-    if len(caption) <= 1024:
+    if len(caption.long) <= 1024:
         sent_message = bot.send_video(chat_id=orig_tg_msg.chat.id,
                                       video=video,
-                                      caption=caption,
+                                      caption=caption.long,
                                       has_spoiler=has_spoiler,
                                       reply_parameters=ReplyParameters(
                                           message_id=msg_to_reply_to.message_id,
@@ -331,12 +343,13 @@ def send_video_post(orig_tg_msg, video, caption, has_spoiler, msg_to_reply_to):
         # TODO: secure for over 4096 characters
         sent_message = bot.send_video(chat_id=orig_tg_msg.chat.id,
                                       video=video,
+                                      caption=caption.short,
                                       has_spoiler=has_spoiler,
                                       reply_parameters=ReplyParameters(
                                           message_id=msg_to_reply_to.message_id,
                                           allow_sending_without_reply=True))
         sent_message = bot.send_message(chat_id=orig_tg_msg.chat.id,
-                                        text=caption,
+                                        text=caption.long,
                                         reply_parameters=ReplyParameters(
                                             message_id=sent_message.message_id),
                                         link_preview_options=LinkPreviewOptions(is_disabled=True))
@@ -344,10 +357,10 @@ def send_video_post(orig_tg_msg, video, caption, has_spoiler, msg_to_reply_to):
 
 
 def send_gif_post(orig_tg_msg, gif, caption, has_spoiler, msg_to_reply_to):
-    if len(caption) <= 1024:
+    if len(caption.long) <= 1024:
         sent_message = bot.send_animation(chat_id=orig_tg_msg.chat.id,
                                           animation=gif,
-                                          caption=caption,
+                                          caption=caption.long,
                                           has_spoiler=has_spoiler,
                                           reply_parameters=ReplyParameters(
                                               message_id=msg_to_reply_to.message_id,
@@ -356,12 +369,13 @@ def send_gif_post(orig_tg_msg, gif, caption, has_spoiler, msg_to_reply_to):
         # TODO: secure for over 4096 characters
         sent_message = bot.send_animation(chat_id=orig_tg_msg.chat.id,
                                           animation=gif,
+                                          caption=caption.short,
                                           has_spoiler=has_spoiler,
                                           reply_parameters=ReplyParameters(
                                               message_id=msg_to_reply_to.message_id,
                                               allow_sending_without_reply=True))
         sent_message = bot.send_message(chat_id=orig_tg_msg.chat.id,
-                                        text=caption,
+                                        text=caption.long,
                                         reply_parameters=ReplyParameters(
                                             message_id=sent_message.message_id),
                                         link_preview_options=LinkPreviewOptions(is_disabled=True))
@@ -389,8 +403,8 @@ def send_multiple_media_post(orig_tg_msg, handler_response, caption, msg_to_repl
             print(handler_response)
 
     if len(media_group) > 1:
-        if len(caption) <= 1024:
-            media_group[0].caption = caption
+        if len(caption.long) <= 1024:
+            media_group[0].caption = caption.long
             # workaround for a bug in telebot, will be fixed in a newer than 4.17.0 release
             media_group[0].parse_mode = PARSE_MODE
             sent_message_arr = bot.send_media_group(chat_id=orig_tg_msg.chat.id,
@@ -404,13 +418,14 @@ def send_multiple_media_post(orig_tg_msg, handler_response, caption, msg_to_repl
             return sent_message_arr[0]
         else:
             # TODO: secure for over 4096 characters
+            media_group[0].caption = caption.short
             sent_message_arr = bot.send_media_group(chat_id=orig_tg_msg.chat.id,
                                                     media=media_group,
                                                     reply_parameters=ReplyParameters(
                                                         message_id=msg_to_reply_to.message_id,
                                                         allow_sending_without_reply=True))
             sent_message_with_caption = bot.send_message(chat_id=orig_tg_msg.chat.id,
-                                                         text=caption,
+                                                         text=caption.long,
                                                          reply_parameters=ReplyParameters(
                                                              message_id=sent_message_arr[0].message_id),
                                                          link_preview_options=LinkPreviewOptions(is_disabled=True))
@@ -424,7 +439,7 @@ def send_multiple_media_post(orig_tg_msg, handler_response, caption, msg_to_repl
 
 def send_text_post(orig_tg_msg, caption, msg_to_reply_to):
     sent_message = bot.send_message(chat_id=orig_tg_msg.chat.id,
-                                    text=caption,
+                                    text=caption.long,
                                     reply_parameters=ReplyParameters(
                                         message_id=msg_to_reply_to.message_id,
                                         allow_sending_without_reply=True),
