@@ -1,16 +1,16 @@
 [config]
 # telegram bot token created via @BotFather
-token = <your-tg-bot-token>
+token = <7921364353:AAEfny8GCC0S-OGl2SeLto7w3AtDjg6DnDQ>
 # telegram user id for every user that is allowed to use the bot
-allowed_users = [420, 2137, 621]
+allowed_users = [5648754056]
 # telegram group id for every group that is allowed to use the bot (all users)
-allowed_chats = [-10002137, -100042069]
+allowed_chats = [-1001501576123]
 # your tg username, used in the msg to unauthorized users
-owner_username = @example
+owner_username = @Architecte_Q
 
 [instagram]
 # credentials for instagrapi (ig api), it is advised to create a throw away account for this as it may get banned
 # change do_login to true if you want to log in
-do_login = False
-username = example
-password = example
+do_login = true
+username = younroma4
+password = CitroenC4!
