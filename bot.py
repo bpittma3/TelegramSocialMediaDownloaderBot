@@ -31,8 +31,8 @@ class Caption:
 me = singleton.SingleInstance()  # will sys.exit(-1) if other instance is running
 
 config = configparser.ConfigParser()
-if os.path.isfile("config.txt"):
-    config.read("config.txt")
+if os.path.isfile("config.env"):
+    config.read("config.env")
 else:
     print("No config file. Create config file and run the script again.")
     exit(1)
